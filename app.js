@@ -1,1160 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapShotPro - Professional Screenshot Sharing</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0f0f0f;
-            --bg-secondary: #1a1a1a;
-            --bg-tertiary: #242424;
-            --border-color: #333;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b0b0;
-            --text-tertiary: #808080;
-            --accent-primary: #6366f1;
-            --accent-hover: #4f46e5;
-            --accent-light: rgba(99, 102, 241, 0.1);
-            --success: #10b981;
-            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        .app-container {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        /* Header */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            z-index: 1000;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .logo-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 12px;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 360px;
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-            margin-top: 60px;
-            height: calc(100vh - 60px);
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        .sidebar::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: #333;
-        }
-
-        .sidebar-section {
-            padding: 24px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .section-title {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            margin-top: 60px;
-            padding: 32px;
-            overflow: auto;
-            background: var(--bg-primary);
-        }
-
-        .canvas-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .canvas-wrapper {
-            position: relative;
-            max-width: 100%;
-            max-height: calc(100vh - 140px);
-            transition: all 0.3s ease;
-        }
-
-        #preview-canvas {
-            display: block;
-            max-width: 100%;
-            max-height: calc(100vh - 140px);
-            border-radius: 8px;
-            box-shadow: var(--shadow-lg);
-        }
-
-        /* Upload Zone */
-        .upload-zone {
-            width: 600px;
-            height: 400px;
-            border: 2px dashed var(--border-color);
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: var(--bg-secondary);
-        }
-
-        .upload-zone:hover {
-            border-color: var(--accent-primary);
-            background: rgba(99, 102, 241, 0.05);
-        }
-
-        .upload-zone.drag-over {
-            border-color: var(--accent-primary);
-            background: var(--accent-light);
-            transform: scale(1.02);
-        }
-
-        .upload-icon {
-            font-size: 48px;
-            color: var(--text-secondary);
-        }
-
-        .upload-text {
-            text-align: center;
-        }
-
-        .upload-text h3 {
-            font-size: 18px;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
-
-        .upload-text p {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        /* Form Controls */
-        .control-group {
-            margin-bottom: 20px;
-        }
-
-        .control-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
-
-        .control-input {
-            width: 100%;
-            padding: 10px 12px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .control-input:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px var(--accent-light);
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            background: var(--bg-tertiary);
-            border-radius: 3px;
-            outline: none;
-            padding: 0;
-            border: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-            background: var(--accent-hover);
-            transform: scale(1.1);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
-            background: var(--accent-primary);
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-        }
-
-        .range-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .range-input {
-            flex: 1;
-        }
-
-        .range-value {
-            min-width: 40px;
-            text-align: right;
-            font-size: 13px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        /* Color Picker */
-        .color-picker-wrapper {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .color-preview {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            border: 2px solid var(--border-color);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .color-preview:hover {
-            border-color: var(--accent-primary);
-            transform: scale(1.05);
-        }
-
-        .color-preview input[type="color"] {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: calc(100% + 20px);
-            height: calc(100% + 20px);
-            border: none;
-            cursor: pointer;
-        }
-
-        /* Gradient Picker */
-        .gradient-stops {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .gradient-stop {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .gradient-stop-color {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            border: 2px solid var(--border-color);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .gradient-stop-color input[type="color"] {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: calc(100% + 20px);
-            height: calc(100% + 20px);
-            border: none;
-            cursor: pointer;
-        }
-
-        .gradient-stop-position {
-            flex: 1;
-        }
-
-        /* Preset Buttons */
-        .preset-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .preset-button {
-            height: 60px;
-            border-radius: 8px;
-            border: 2px solid var(--border-color);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .preset-button:hover {
-            border-color: var(--accent-primary);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .preset-button.active {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px var(--accent-light);
-        }
-
-        .preset-label {
-            position: absolute;
-            bottom: 4px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 11px;
-            font-weight: 600;
-            color: white;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-            padding: 4px;
-            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .btn-primary {
-            background: var(--accent-primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background: #2a2a2a;
-            border-color: #404040;
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-
-        /* Toggle Switch */
-        .toggle-switch {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .toggle-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        .switch {
-            position: relative;
-            width: 44px;
-            height: 24px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            transition: .3s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background-color: var(--text-secondary);
-            transition: .3s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background-color: var(--accent-primary);
-            border-color: var(--accent-primary);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(20px);
-            background-color: white;
-        }
-
-        /* Select Dropdown */
-        select.control-input {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 36px;
-        }
-
-        /* Number Input */
-        input[type="number"].control-input {
-            -moz-appearance: textfield;
-        }
-
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        /* Angle Input */
-        .angle-input-group {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .angle-visual {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .angle-indicator {
-            width: 2px;
-            height: 16px;
-            background: var(--accent-primary);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform-origin: center bottom;
-            border-radius: 2px;
-        }
-
-        /* Export Panel */
-        .export-options {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .export-size-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-
-        .size-preset-btn {
-            padding: 12px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: left;
-        }
-
-        .size-preset-btn:hover {
-            background: #2a2a2a;
-            border-color: var(--accent-primary);
-        }
-
-        .size-preset-btn.active {
-            background: var(--accent-light);
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
-        }
-
-        .size-preset-label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .size-preset-dims {
-            font-size: 11px;
-            color: var(--text-secondary);
-        }
-
-        /* Hidden file input */
-        #file-input {
-            display: none;
-        }
-
-        /* Notification */
-        .notification {
-            position: fixed;
-            top: 80px;
-            right: 24px;
-            padding: 16px 20px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 2000;
-            transform: translateX(400px);
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        .notification.success {
-            border-color: var(--success);
-        }
-
-        .notification.error {
-            border-color: #ef4444;
-        }
-
-        .notification-icon {
-            font-size: 20px;
-        }
-
-        .notification-text {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        /* Loading State */
-        .loading {
-            pointer-events: none;
-            opacity: 0.6;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 1024px) {
-            .sidebar {
-                width: 320px;
-            }
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--bg-tertiary);
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #333;
-        }
-
-        /* Gradient Preview */
-        .gradient-preview {
-            width: 100%;
-            height: 60px;
-            border-radius: 8px;
-            margin-top: 12px;
-            border: 2px solid var(--border-color);
-        }
-
-        /* Shadow Preset Grid */
-        .shadow-preset-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .shadow-preset-btn {
-            padding: 12px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        .shadow-preset-btn:hover {
-            background: #2a2a2a;
-            border-color: var(--accent-primary);
-        }
-
-        .shadow-preset-btn.active {
-            background: var(--accent-light);
-            border-color: var(--accent-primary);
-            color: var(--accent-primary);
-        }
-
-        /* Info Text */
-        .info-text {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            margin-top: 8px;
-            line-height: 1.5;
-        }
-
-        /* Divider */
-        .divider {
-            height: 1px;
-            background: var(--border-color);
-            margin: 16px 0;
-        }
-
-        /* Collapsible Section */
-        .collapsible-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            padding: 12px 0;
-            user-select: none;
-        }
-
-        .collapsible-header:hover .section-title {
-            color: var(--accent-primary);
-        }
-
-        .collapsible-icon {
-            font-size: 12px;
-            color: var(--text-secondary);
-            transition: transform 0.3s ease;
-        }
-
-        .collapsible-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .collapsible-content.open {
-            max-height: 2000px;
-        }
-
-        .collapsible-icon.open {
-            transform: rotate(180deg);
-        }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <div class="logo-icon">📸</div>
-                    <span>SnapShotPro</span>
-                </div>
-                <div class="header-actions">
-                    <button class="btn btn-secondary" id="undo-btn" disabled>↶ Undo</button>
-                    <button class="btn btn-secondary" id="redo-btn" disabled>↷ Redo</button>
-                    <button class="btn btn-secondary" id="reset-btn">Reset</button>
-                    <button class="btn btn-success" id="export-btn">Export Image</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <!-- Image Upload Section -->
-            <div class="sidebar-section">
-                <h3 class="section-title">Image Upload</h3>
-                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                    <button class="btn btn-primary" style="flex: 1;" id="upload-btn">
-                        <span>📁</span>
-                        Choose Image
-                    </button>
-                    <button class="btn btn-secondary" style="flex: 1;" id="svg-btn">
-                        <span>&lt;/&gt;</span>
-                        SVG Code
-                    </button>
-                </div>
-                <p class="info-text">Or paste (Ctrl+V) / drag & drop an image</p>
-                <input type="file" id="file-input" accept="image/*">
-
-                <!-- SVG Code Input -->
-                <div id="svg-input-container" style="display: none; margin-top: 16px;">
-                    <label class="control-label">Paste SVG Code</label>
-                    <textarea class="control-input" id="svg-code-input" placeholder="<svg>...</svg>" style="min-height: 120px; font-family: monospace; font-size: 12px;"></textarea>
-                    <button class="btn btn-primary" style="width: 100%; margin-top: 8px;" id="render-svg-btn">Render SVG</button>
-                </div>
-            </div>
-
-            <!-- Image Editing Section -->
-            <div class="sidebar-section">
-                <h3 class="section-title">Image Editing</h3>
-
-                <!-- Transform Controls -->
-                <label class="control-label">Transform</label>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px;">
-                    <button class="btn btn-secondary" id="rotate-left-btn">↶ 90°</button>
-                    <button class="btn btn-secondary" id="rotate-right-btn">↷ 90°</button>
-                    <button class="btn btn-secondary" id="flip-h-btn">↔ Flip H</button>
-                    <button class="btn btn-secondary" id="flip-v-btn">↕ Flip V</button>
-                </div>
-
-                <!-- Filters -->
-                <label class="control-label">Filters</label>
-                <div class="control-group">
-                    <label class="control-label" style="font-size: 12px; margin-bottom: 4px;">Brightness</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="brightness" min="0" max="200" value="100">
-                        <span class="range-value" id="brightness-value">100%</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" style="font-size: 12px; margin-bottom: 4px;">Contrast</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="contrast" min="0" max="200" value="100">
-                        <span class="range-value" id="contrast-value">100%</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" style="font-size: 12px; margin-bottom: 4px;">Saturation</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="saturation" min="0" max="200" value="100">
-                        <span class="range-value" id="saturation-value">100%</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" style="font-size: 12px; margin-bottom: 4px;">Blur</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="blur" min="0" max="20" value="0">
-                        <span class="range-value" id="blur-value">0px</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" style="font-size: 12px; margin-bottom: 4px;">Grayscale</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="grayscale" min="0" max="100" value="0">
-                        <span class="range-value" id="grayscale-value">0%</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label" style="font-size: 12px; margin-bottom: 4px;">Sepia</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="sepia" min="0" max="100" value="0">
-                        <span class="range-value" id="sepia-value">0%</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Background Gradient Section -->
-            <div class="sidebar-section">
-                <h3 class="section-title">Background Gradient</h3>
-
-                <div class="preset-grid">
-                    <div class="preset-button" data-preset="sunset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <span class="preset-label">Sunset</span>
-                    </div>
-                    <div class="preset-button" data-preset="ocean" style="background: linear-gradient(135deg, #2E3192 0%, #1BFFFF 100%);">
-                        <span class="preset-label">Ocean</span>
-                    </div>
-                    <div class="preset-button" data-preset="forest" style="background: linear-gradient(135deg, #134E5E 0%, #71B280 100%);">
-                        <span class="preset-label">Forest</span>
-                    </div>
-                    <div class="preset-button" data-preset="fire" style="background: linear-gradient(135deg, #F2994A 0%, #F2C94C 100%);">
-                        <span class="preset-label">Fire</span>
-                    </div>
-                    <div class="preset-button" data-preset="midnight" style="background: linear-gradient(135deg, #0F2027 0%, #203A43 50%, #2C5364 100%);">
-                        <span class="preset-label">Midnight</span>
-                    </div>
-                    <div class="preset-button" data-preset="rose" style="background: linear-gradient(135deg, #ED4264 0%, #FFEDBC 100%);">
-                        <span class="preset-label">Rose</span>
-                    </div>
-                    <div class="preset-button" data-preset="purple" style="background: linear-gradient(135deg, #A8EDEA 0%, #FED6E3 100%);">
-                        <span class="preset-label">Purple Dream</span>
-                    </div>
-                    <div class="preset-button" data-preset="mint" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);">
-                        <span class="preset-label">Mint</span>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="control-group">
-                    <label class="control-label">Gradient Type</label>
-                    <select class="control-input" id="gradient-type">
-                        <option value="linear">Linear</option>
-                        <option value="radial">Radial</option>
-                    </select>
-                </div>
-
-                <div class="control-group" id="gradient-angle-group">
-                    <label class="control-label">Angle</label>
-                    <div class="angle-input-group">
-                        <div class="angle-visual">
-                            <div class="angle-indicator" id="angle-indicator"></div>
-                        </div>
-                        <div class="range-group" style="flex: 1;">
-                            <input type="range" class="range-input" id="gradient-angle" min="0" max="360" value="135">
-                            <span class="range-value" id="gradient-angle-value">135°</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gradient-stops">
-                    <div class="gradient-stop">
-                        <div class="gradient-stop-color">
-                            <input type="color" id="gradient-color-1" value="#667eea">
-                        </div>
-                        <div class="gradient-stop-position">
-                            <div class="range-group">
-                                <input type="range" class="range-input" id="gradient-pos-1" min="0" max="100" value="0">
-                                <span class="range-value" id="gradient-pos-1-value">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="gradient-stop">
-                        <div class="gradient-stop-color">
-                            <input type="color" id="gradient-color-2" value="#764ba2">
-                        </div>
-                        <div class="gradient-stop-position">
-                            <div class="range-group">
-                                <input type="range" class="range-input" id="gradient-pos-2" min="0" max="100" value="100">
-                                <span class="range-value" id="gradient-pos-2-value">100%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gradient-preview" id="gradient-preview"></div>
-            </div>
-
-            <!-- Image Settings Section -->
-            <div class="sidebar-section">
-                <h3 class="section-title">Image Settings</h3>
-
-                <div class="control-group">
-                    <label class="control-label">Padding</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="padding" min="0" max="200" value="60">
-                        <span class="range-value" id="padding-value">60px</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Scale</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="scale" min="50" max="150" value="100">
-                        <span class="range-value" id="scale-value">100%</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Border Radius</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="border-radius" min="0" max="50" value="12">
-                        <span class="range-value" id="border-radius-value">12px</span>
-                    </div>
-                </div>
-
-                <div class="toggle-switch">
-                    <span class="toggle-label">Show Border</span>
-                    <label class="switch">
-                        <input type="checkbox" id="show-border">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="control-group" id="border-controls" style="display: none;">
-                    <label class="control-label">Border Width</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="border-width" min="1" max="20" value="2">
-                        <span class="range-value" id="border-width-value">2px</span>
-                    </div>
-
-                    <label class="control-label" style="margin-top: 12px;">Border Color</label>
-                    <div class="color-picker-wrapper">
-                        <div class="color-preview">
-                            <input type="color" id="border-color" value="#ffffff">
-                        </div>
-                        <input type="text" class="control-input" id="border-color-text" value="#ffffff" style="flex: 1;">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Shadow Settings Section -->
-            <div class="sidebar-section">
-                <h3 class="section-title">Shadow Settings</h3>
-
-                <div class="shadow-preset-grid">
-                    <div class="shadow-preset-btn active" data-shadow="soft">Soft</div>
-                    <div class="shadow-preset-btn" data-shadow="medium">Medium</div>
-                    <div class="shadow-preset-btn" data-shadow="hard">Hard</div>
-                    <div class="shadow-preset-btn" data-shadow="none">None</div>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="control-group">
-                    <label class="control-label">Shadow Blur</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="shadow-blur" min="0" max="100" value="40">
-                        <span class="range-value" id="shadow-blur-value">40px</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Shadow Spread</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="shadow-spread" min="0" max="50" value="10">
-                        <span class="range-value" id="shadow-spread-value">10px</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Shadow Opacity</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="shadow-opacity" min="0" max="100" value="30">
-                        <span class="range-value" id="shadow-opacity-value">30%</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Offset X</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="shadow-x" min="-50" max="50" value="0">
-                        <span class="range-value" id="shadow-x-value">0px</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Offset Y</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="shadow-y" min="-50" max="50" value="10">
-                        <span class="range-value" id="shadow-y-value">10px</span>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Shadow Color</label>
-                    <div class="color-picker-wrapper">
-                        <div class="color-preview">
-                            <input type="color" id="shadow-color" value="#000000">
-                        </div>
-                        <input type="text" class="control-input" id="shadow-color-text" value="#000000" style="flex: 1;">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Canvas Settings Section -->
-            <div class="sidebar-section">
-                <h3 class="section-title">Canvas Settings</h3>
-
-                <div class="control-group">
-                    <label class="control-label">Canvas Width</label>
-                    <input type="number" class="control-input" id="canvas-width" value="1200" min="400" max="4000" step="100">
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Canvas Height</label>
-                    <input type="number" class="control-input" id="canvas-height" value="675" min="400" max="4000" step="100">
-                </div>
-
-                <div class="export-size-grid">
-                    <div class="size-preset-btn" data-size="twitter">
-                        <span class="size-preset-label">Twitter</span>
-                        <span class="size-preset-dims">1200 × 675</span>
-                    </div>
-                    <div class="size-preset-btn" data-size="instagram">
-                        <span class="size-preset-label">Instagram</span>
-                        <span class="size-preset-dims">1080 × 1080</span>
-                    </div>
-                    <div class="size-preset-btn" data-size="facebook">
-                        <span class="size-preset-label">Facebook</span>
-                        <span class="size-preset-dims">1200 × 630</span>
-                    </div>
-                    <div class="size-preset-btn" data-size="linkedin">
-                        <span class="size-preset-label">LinkedIn</span>
-                        <span class="size-preset-dims">1200 × 627</span>
-                    </div>
-                </div>
-
-                <p class="info-text">Export quality: PNG (Lossless)</p>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <div class="canvas-container" id="drop-zone">
-                <div class="upload-zone" id="upload-zone">
-                    <div class="upload-icon">📸</div>
-                    <div class="upload-text">
-                        <h3>Drop your screenshot here</h3>
-                        <p>or click to browse • Supports PNG, JPG, WebP</p>
-                    </div>
-                </div>
-                <div class="canvas-wrapper" id="canvas-wrapper" style="display: none;">
-                    <canvas id="preview-canvas"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Notification -->
-    <div class="notification" id="notification">
-        <span class="notification-icon">✓</span>
-        <span class="notification-text" id="notification-text">Image exported successfully!</span>
-    </div>
-
-    <script>
-        // History Management
         const history = {
             past: [],
             future: [],
@@ -1177,6 +20,24 @@
                 blur: 0,
                 grayscale: 0,
                 sepia: 0
+            },
+            textOverlay: {
+                enabled: false,
+                content: '',
+                size: 48,
+                font: 'Arial',
+                color: '#ffffff',
+                bold: false,
+                italic: false,
+                x: 0.5,
+                y: 0.5
+            },
+            windowOverlay: {
+                enabled: false,
+                style: 'macos',
+                title: 'Screenshot',
+                height: 40,
+                showControls: true
             },
             gradient: {
                 type: 'linear',
@@ -1209,6 +70,8 @@
             const stateCopy = JSON.parse(JSON.stringify({
                 imageTransform: state.imageTransform,
                 imageFilters: state.imageFilters,
+                textOverlay: state.textOverlay,
+                windowOverlay: state.windowOverlay,
                 gradient: state.gradient,
                 padding: state.padding,
                 scale: state.scale,
@@ -1235,6 +98,8 @@
             const currentState = JSON.parse(JSON.stringify({
                 imageTransform: state.imageTransform,
                 imageFilters: state.imageFilters,
+                textOverlay: state.textOverlay,
+                windowOverlay: state.windowOverlay,
                 gradient: state.gradient,
                 padding: state.padding,
                 scale: state.scale,
@@ -1262,6 +127,8 @@
             const currentState = JSON.parse(JSON.stringify({
                 imageTransform: state.imageTransform,
                 imageFilters: state.imageFilters,
+                textOverlay: state.textOverlay,
+                windowOverlay: state.windowOverlay,
                 gradient: state.gradient,
                 padding: state.padding,
                 scale: state.scale,
@@ -1344,6 +211,26 @@
 
             elements.canvasWidth.value = state.canvas.width;
             elements.canvasHeight.value = state.canvas.height;
+
+            // Text overlay
+            elements.textControls.style.display = state.textOverlay.enabled ? 'block' : 'none';
+            elements.textContent.value = state.textOverlay.content;
+            elements.textSize.value = state.textOverlay.size;
+            elements.textSizeValue.textContent = state.textOverlay.size;
+            elements.textFont.value = state.textOverlay.font;
+            elements.textColor.value = state.textOverlay.color;
+            elements.textColorText.value = state.textOverlay.color;
+            elements.textBold.checked = state.textOverlay.bold;
+            elements.textItalic.checked = state.textOverlay.italic;
+
+            // Window overlay
+            elements.windowOverlayEnabled.checked = state.windowOverlay.enabled;
+            elements.windowOverlayControls.style.display = state.windowOverlay.enabled ? 'block' : 'none';
+            elements.windowOverlayStyle.value = state.windowOverlay.style;
+            elements.windowOverlayTitle.value = state.windowOverlay.title;
+            elements.windowOverlayHeight.value = state.windowOverlay.height;
+            elements.windowOverlayHeightValue.textContent = state.windowOverlay.height + 'px';
+            elements.windowShowControls.checked = state.windowOverlay.showControls;
 
             updateAngleIndicator();
             updateGradientPreview();
@@ -1490,7 +377,29 @@
 
             // Canvas settings
             canvasWidth: document.getElementById('canvas-width'),
-            canvasHeight: document.getElementById('canvas-height')
+            canvasHeight: document.getElementById('canvas-height'),
+
+            // Text overlay controls
+            addTextBtn: document.getElementById('add-text-btn'),
+            textControls: document.getElementById('text-controls'),
+            textContent: document.getElementById('text-content'),
+            textSize: document.getElementById('text-size'),
+            textSizeValue: document.getElementById('text-size-value'),
+            textFont: document.getElementById('text-font'),
+            textColor: document.getElementById('text-color'),
+            textColorText: document.getElementById('text-color-text'),
+            textBold: document.getElementById('text-bold'),
+            textItalic: document.getElementById('text-italic'),
+            removeTextBtn: document.getElementById('remove-text-btn'),
+
+            // Window overlay controls
+            windowOverlayEnabled: document.getElementById('window-overlay-enabled'),
+            windowOverlayControls: document.getElementById('window-overlay-controls'),
+            windowOverlayStyle: document.getElementById('window-overlay-style'),
+            windowOverlayTitle: document.getElementById('window-overlay-title'),
+            windowOverlayHeight: document.getElementById('window-overlay-height'),
+            windowOverlayHeightValue: document.getElementById('window-overlay-height-value'),
+            windowShowControls: document.getElementById('window-show-controls')
         };
 
         // Initialize Canvas Context
@@ -1726,6 +635,92 @@
 
             elements.canvasHeight.addEventListener('input', (e) => {
                 state.canvas.height = parseInt(e.target.value);
+                render();
+            });
+
+            // Text overlay controls
+            elements.addTextBtn.addEventListener('click', () => {
+                state.textOverlay.enabled = true;
+                elements.textControls.style.display = 'block';
+                saveStateToHistory();
+                render();
+            });
+
+            elements.textContent.addEventListener('input', (e) => {
+                state.textOverlay.content = e.target.value;
+                render();
+            });
+
+            elements.textSize.addEventListener('input', (e) => {
+                state.textOverlay.size = parseInt(e.target.value);
+                elements.textSizeValue.textContent = e.target.value;
+                render();
+            });
+
+            elements.textFont.addEventListener('change', (e) => {
+                state.textOverlay.font = e.target.value;
+                render();
+            });
+
+            elements.textColor.addEventListener('input', (e) => {
+                state.textOverlay.color = e.target.value;
+                elements.textColorText.value = e.target.value;
+                render();
+            });
+
+            elements.textColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                    state.textOverlay.color = e.target.value;
+                    elements.textColor.value = e.target.value;
+                    render();
+                }
+            });
+
+            elements.textBold.addEventListener('change', (e) => {
+                state.textOverlay.bold = e.target.checked;
+                render();
+            });
+
+            elements.textItalic.addEventListener('change', (e) => {
+                state.textOverlay.italic = e.target.checked;
+                render();
+            });
+
+            elements.removeTextBtn.addEventListener('click', () => {
+                state.textOverlay.enabled = false;
+                state.textOverlay.content = '';
+                elements.textControls.style.display = 'none';
+                elements.textContent.value = '';
+                saveStateToHistory();
+                render();
+            });
+
+            // Window overlay controls
+            elements.windowOverlayEnabled.addEventListener('change', (e) => {
+                state.windowOverlay.enabled = e.target.checked;
+                elements.windowOverlayControls.style.display = e.target.checked ? 'block' : 'none';
+                saveStateToHistory();
+                render();
+            });
+
+            elements.windowOverlayStyle.addEventListener('change', (e) => {
+                state.windowOverlay.style = e.target.value;
+                render();
+            });
+
+            elements.windowOverlayTitle.addEventListener('input', (e) => {
+                state.windowOverlay.title = e.target.value;
+                render();
+            });
+
+            elements.windowOverlayHeight.addEventListener('input', (e) => {
+                state.windowOverlay.height = parseInt(e.target.value);
+                elements.windowOverlayHeightValue.textContent = e.target.value + 'px';
+                render();
+            });
+
+            elements.windowShowControls.addEventListener('change', (e) => {
+                state.windowOverlay.showControls = e.target.checked;
                 render();
             });
 
@@ -1968,8 +963,11 @@
             const scaleFactor = state.scale / 100;
             const padding = state.padding * 2;
 
+            // Account for window overlay title bar
+            const titleBarHeight = state.windowOverlay.enabled ? state.windowOverlay.height : 0;
+
             const availableWidth = canvas.width - padding;
-            const availableHeight = canvas.height - padding;
+            const availableHeight = canvas.height - padding - titleBarHeight;
 
             let imgWidth = state.image.width * scaleFactor;
             let imgHeight = state.image.height * scaleFactor;
@@ -1993,7 +991,7 @@
             }
 
             const x = (canvas.width - imgWidth) / 2;
-            const y = (canvas.height - imgHeight) / 2;
+            const y = (canvas.height - imgHeight - titleBarHeight) / 2 + titleBarHeight;
 
             // Draw shadow
             if (state.shadow.opacity > 0) {
@@ -2075,6 +1073,17 @@
             if (state.showBorder) {
                 drawBorder(x, y, imgWidth, imgHeight);
             }
+
+            // Draw window overlay
+            if (state.windowOverlay.enabled) {
+                // Calculate window position (title bar starts above the image)
+                const windowY = y - state.windowOverlay.height;
+                const windowHeight = imgHeight + state.windowOverlay.height;
+                drawMacOSWindow(x, windowY, imgWidth, windowHeight);
+            }
+
+            // Draw text overlay
+            drawTextOverlay();
         }
 
         function drawGradient() {
@@ -2169,6 +1178,113 @@
             ctx.stroke();
         }
 
+        // Draw Text Overlay
+        function drawTextOverlay() {
+            if (!state.textOverlay.enabled || !state.textOverlay.content) return;
+
+            ctx.save();
+
+            // Build font string
+            let fontStyle = '';
+            if (state.textOverlay.italic) fontStyle += 'italic ';
+            if (state.textOverlay.bold) fontStyle += 'bold ';
+            ctx.font = `${fontStyle}${state.textOverlay.size}px ${state.textOverlay.font}`;
+
+            // Set text properties
+            ctx.fillStyle = state.textOverlay.color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Calculate position (x and y are percentages 0-1)
+            const x = elements.canvas.width * state.textOverlay.x;
+            const y = elements.canvas.height * state.textOverlay.y;
+
+            // Draw text
+            ctx.fillText(state.textOverlay.content, x, y);
+
+            ctx.restore();
+        }
+
+        // Draw macOS Window Overlay
+        function drawMacOSWindow(x, y, width, height) {
+            const titleBarHeight = state.windowOverlay.height;
+            const radius = state.borderRadius;
+
+            ctx.save();
+
+            // Draw title bar background
+            const titleBarGradient = ctx.createLinearGradient(x, y, x, y + titleBarHeight);
+            titleBarGradient.addColorStop(0, '#ececec');
+            titleBarGradient.addColorStop(1, '#d6d6d6');
+            ctx.fillStyle = titleBarGradient;
+
+            // Title bar with top rounded corners
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + titleBarHeight);
+            ctx.lineTo(x, y + titleBarHeight);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw title bar border
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y + titleBarHeight);
+            ctx.lineTo(x + width, y + titleBarHeight);
+            ctx.stroke();
+
+            // Draw window controls (traffic lights) if enabled
+            if (state.windowOverlay.showControls) {
+                const buttonY = y + titleBarHeight / 2;
+                const buttonSpacing = 20;
+                const buttonRadius = 6;
+                const startX = x + 12;
+
+                // Red button (close)
+                ctx.fillStyle = '#ff5f57';
+                ctx.beginPath();
+                ctx.arc(startX, buttonY, buttonRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#e04038';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+
+                // Yellow button (minimize)
+                ctx.fillStyle = '#ffbd2e';
+                ctx.beginPath();
+                ctx.arc(startX + buttonSpacing, buttonY, buttonRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#dea123';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+
+                // Green button (maximize)
+                ctx.fillStyle = '#28ca42';
+                ctx.beginPath();
+                ctx.arc(startX + buttonSpacing * 2, buttonY, buttonRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#1fa935';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+
+            // Draw window title
+            if (state.windowOverlay.title) {
+                ctx.fillStyle = '#333333';
+                ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(state.windowOverlay.title, x + width / 2, y + titleBarHeight / 2);
+            }
+
+            ctx.restore();
+        }
+
         // Export Function
         function exportImage() {
             if (!state.image) {
@@ -2205,6 +1321,24 @@
                 blur: 0,
                 grayscale: 0,
                 sepia: 0
+            };
+            state.textOverlay = {
+                enabled: false,
+                content: '',
+                size: 48,
+                font: 'Arial',
+                color: '#ffffff',
+                bold: false,
+                italic: false,
+                x: 0.5,
+                y: 0.5
+            };
+            state.windowOverlay = {
+                enabled: false,
+                style: 'macos',
+                title: 'Screenshot',
+                height: 40,
+                showControls: true
             };
             state.gradient = {
                 type: 'linear',
@@ -2284,6 +1418,26 @@
             elements.canvasWidth.value = 1200;
             elements.canvasHeight.value = 675;
 
+            // Text overlay
+            elements.textControls.style.display = 'none';
+            elements.textContent.value = '';
+            elements.textSize.value = 48;
+            elements.textSizeValue.textContent = '48';
+            elements.textFont.value = 'Arial';
+            elements.textColor.value = '#ffffff';
+            elements.textColorText.value = '#ffffff';
+            elements.textBold.checked = false;
+            elements.textItalic.checked = false;
+
+            // Window overlay
+            elements.windowOverlayEnabled.checked = false;
+            elements.windowOverlayControls.style.display = 'none';
+            elements.windowOverlayStyle.value = 'macos';
+            elements.windowOverlayTitle.value = 'Screenshot';
+            elements.windowOverlayHeight.value = 40;
+            elements.windowOverlayHeightValue.textContent = '40px';
+            elements.windowShowControls.checked = true;
+
             // Reset active buttons
             document.querySelectorAll('.preset-button').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.shadow-preset-btn').forEach(b => b.classList.remove('active'));
@@ -2324,5 +1478,3 @@
         // Start the application
         init();
     </script>
-</body>
-</html>

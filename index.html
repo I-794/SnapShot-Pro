@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SnapShotPro - Professional Screenshot Sharing</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-container">
@@ -118,74 +118,63 @@
             <div class="sidebar-section">
                 <h3 class="section-title">Text & Annotations</h3>
 
-                <div class="control-group">
-                    <label class="control-label">Add Text</label>
-                    <textarea class="control-input" id="text-content" placeholder="Enter text..." style="min-height: 80px; resize: vertical;"></textarea>
-                    <button class="btn btn-primary" style="width: 100%; margin-top: 8px;" id="add-text-btn">Add Text</button>
-                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-bottom: 12px;" id="add-text-btn">+ Add Text</button>
 
-                <div class="control-group">
-                    <label class="control-label">Font Family</label>
-                    <select class="control-input" id="text-font">
-                        <option value="Arial">Arial</option>
-                        <option value="Helvetica">Helvetica</option>
-                        <option value="Times New Roman">Times New Roman</option>
-                        <option value="Georgia">Georgia</option>
-                        <option value="Verdana">Verdana</option>
-                        <option value="Courier New">Courier New</option>
-                        <option value="Comic Sans MS">Comic Sans MS</option>
-                        <option value="Impact">Impact</option>
-                    </select>
-                </div>
-
-                <div class="control-group">
-                    <label class="control-label">Font Size</label>
-                    <div class="range-group">
-                        <input type="range" class="range-input" id="text-size" min="12" max="120" value="32">
-                        <span class="range-value" id="text-size-value">32px</span>
+                <div id="text-controls" style="display: none;">
+                    <div class="control-group">
+                        <label class="control-label">Text Content</label>
+                        <input type="text" class="control-input" id="text-content" placeholder="Enter text...">
                     </div>
-                </div>
 
-                <div class="control-group">
-                    <label class="control-label">Text Color</label>
-                    <div class="color-picker-wrapper">
-                        <div class="color-preview">
-                            <input type="color" id="text-color" value="#ffffff">
+                    <div class="control-group">
+                        <label class="control-label">Font Size</label>
+                        <div class="range-group">
+                            <input type="range" class="range-input" id="text-size" min="12" max="120" value="48">
+                            <span class="range-value" id="text-size-value">48px</span>
                         </div>
-                        <input type="text" class="control-input" id="text-color-text" value="#ffffff" style="flex: 1;">
                     </div>
-                </div>
 
-                <div class="control-group">
-                    <label class="control-label">Text Alignment</label>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                        <button class="btn btn-secondary text-align-btn active" data-align="left">◀ Left</button>
-                        <button class="btn btn-secondary text-align-btn" data-align="center">◆ Center</button>
-                        <button class="btn btn-secondary text-align-btn" data-align="right">Right ▶</button>
+                    <div class="control-group">
+                        <label class="control-label">Font Family</label>
+                        <select class="control-input" id="text-font">
+                            <option value="Arial">Arial</option>
+                            <option value="Helvetica">Helvetica</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Impact">Impact</option>
+                        </select>
                     </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Text Color</label>
+                        <div class="color-picker-wrapper">
+                            <div class="color-preview">
+                                <input type="color" id="text-color" value="#ffffff">
+                            </div>
+                            <input type="text" class="control-input" id="text-color-text" value="#ffffff" style="flex: 1;">
+                        </div>
+                    </div>
+
+                    <div class="toggle-switch">
+                        <span class="toggle-label">Bold</span>
+                        <label class="switch">
+                            <input type="checkbox" id="text-bold">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-switch">
+                        <span class="toggle-label">Italic</span>
+                        <label class="switch">
+                            <input type="checkbox" id="text-italic">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" id="remove-text-btn">Remove Text</button>
                 </div>
-
-                <div class="toggle-switch">
-                    <span class="toggle-label">Bold</span>
-                    <label class="switch">
-                        <input type="checkbox" id="text-bold">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="toggle-switch">
-                    <span class="toggle-label">Italic</span>
-                    <label class="switch">
-                        <input type="checkbox" id="text-italic">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="divider"></div>
-
-                <label class="control-label">Watermark</label>
-                <input type="text" class="control-input" id="watermark-text" placeholder="Your watermark text" style="margin-bottom: 8px;">
-                <button class="btn btn-secondary" style="width: 100%;" id="add-watermark-btn">Add Watermark</button>
             </div>
 
             <!-- Background Gradient Section -->
@@ -447,6 +436,6 @@
         <span class="notification-text" id="notification-text">Image exported successfully!</span>
     </div>
 
-    <script src="js/app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

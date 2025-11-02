@@ -39,6 +39,18 @@
                 height: 40,
                 showControls: true
             },
+            watermark: {
+                enabled: false,
+                text: '',
+                position: 'bottom-right',
+                size: 16,
+                opacity: 50,
+                color: '#ffffff'
+            },
+            exportSettings: {
+                format: 'png',
+                quality: 92
+            },
             gradient: {
                 type: 'linear',
                 angle: 135,
@@ -72,6 +84,7 @@
                 imageFilters: state.imageFilters,
                 textOverlay: state.textOverlay,
                 windowOverlay: state.windowOverlay,
+                watermark: state.watermark,
                 gradient: state.gradient,
                 padding: state.padding,
                 scale: state.scale,
@@ -100,6 +113,7 @@
                 imageFilters: state.imageFilters,
                 textOverlay: state.textOverlay,
                 windowOverlay: state.windowOverlay,
+                watermark: state.watermark,
                 gradient: state.gradient,
                 padding: state.padding,
                 scale: state.scale,
@@ -129,6 +143,7 @@
                 imageFilters: state.imageFilters,
                 textOverlay: state.textOverlay,
                 windowOverlay: state.windowOverlay,
+                watermark: state.watermark,
                 gradient: state.gradient,
                 padding: state.padding,
                 scale: state.scale,
@@ -231,6 +246,24 @@
             elements.windowOverlayHeight.value = state.windowOverlay.height;
             elements.windowOverlayHeightValue.textContent = state.windowOverlay.height + 'px';
             elements.windowShowControls.checked = state.windowOverlay.showControls;
+
+            // Watermark
+            elements.watermarkEnabled.checked = state.watermark.enabled;
+            elements.watermarkControls.style.display = state.watermark.enabled ? 'block' : 'none';
+            elements.watermarkText.value = state.watermark.text;
+            elements.watermarkPosition.value = state.watermark.position;
+            elements.watermarkSize.value = state.watermark.size;
+            elements.watermarkSizeValue.textContent = state.watermark.size + 'px';
+            elements.watermarkOpacity.value = state.watermark.opacity;
+            elements.watermarkOpacityValue.textContent = state.watermark.opacity + '%';
+            elements.watermarkColor.value = state.watermark.color;
+            elements.watermarkColorText.value = state.watermark.color;
+
+            // Export settings
+            elements.exportFormat.value = state.exportSettings.format;
+            elements.qualityControls.style.display = (state.exportSettings.format === 'jpeg' || state.exportSettings.format === 'webp') ? 'block' : 'none';
+            elements.exportQuality.value = state.exportSettings.quality;
+            elements.exportQualityValue.textContent = state.exportSettings.quality + '%';
 
             updateAngleIndicator();
             updateGradientPreview();
@@ -399,7 +432,34 @@
             windowOverlayTitle: document.getElementById('window-overlay-title'),
             windowOverlayHeight: document.getElementById('window-overlay-height'),
             windowOverlayHeightValue: document.getElementById('window-overlay-height-value'),
-            windowShowControls: document.getElementById('window-show-controls')
+            windowShowControls: document.getElementById('window-show-controls'),
+
+            // Watermark controls
+            watermarkEnabled: document.getElementById('watermark-enabled'),
+            watermarkControls: document.getElementById('watermark-controls'),
+            watermarkText: document.getElementById('watermark-text'),
+            watermarkPosition: document.getElementById('watermark-position'),
+            watermarkSize: document.getElementById('watermark-size'),
+            watermarkSizeValue: document.getElementById('watermark-size-value'),
+            watermarkOpacity: document.getElementById('watermark-opacity'),
+            watermarkOpacityValue: document.getElementById('watermark-opacity-value'),
+            watermarkColor: document.getElementById('watermark-color'),
+            watermarkColorText: document.getElementById('watermark-color-text'),
+
+            // Export controls
+            exportFormat: document.getElementById('export-format'),
+            qualityControls: document.getElementById('quality-controls'),
+            exportQuality: document.getElementById('export-quality'),
+            exportQualityValue: document.getElementById('export-quality-value'),
+            copyClipboardBtn: document.getElementById('copy-clipboard-btn'),
+
+            // Template controls
+            templateName: document.getElementById('template-name'),
+            saveTemplateBtn: document.getElementById('save-template-btn'),
+            clearTemplatesBtn: document.getElementById('clear-templates-btn'),
+            templateList: document.getElementById('template-list'),
+            loadTemplateBtn: document.getElementById('load-template-btn'),
+            templateInfo: document.getElementById('template-info')
         };
 
         // Initialize Canvas Context
@@ -723,6 +783,68 @@
                 state.windowOverlay.showControls = e.target.checked;
                 render();
             });
+
+            // Watermark controls
+            elements.watermarkEnabled.addEventListener('change', (e) => {
+                state.watermark.enabled = e.target.checked;
+                elements.watermarkControls.style.display = e.target.checked ? 'block' : 'none';
+                saveStateToHistory();
+                render();
+            });
+
+            elements.watermarkText.addEventListener('input', (e) => {
+                state.watermark.text = e.target.value;
+                render();
+            });
+
+            elements.watermarkPosition.addEventListener('change', (e) => {
+                state.watermark.position = e.target.value;
+                render();
+            });
+
+            elements.watermarkSize.addEventListener('input', (e) => {
+                state.watermark.size = parseInt(e.target.value);
+                elements.watermarkSizeValue.textContent = e.target.value + 'px';
+                render();
+            });
+
+            elements.watermarkOpacity.addEventListener('input', (e) => {
+                state.watermark.opacity = parseInt(e.target.value);
+                elements.watermarkOpacityValue.textContent = e.target.value + '%';
+                render();
+            });
+
+            elements.watermarkColor.addEventListener('input', (e) => {
+                state.watermark.color = e.target.value;
+                elements.watermarkColorText.value = e.target.value;
+                render();
+            });
+
+            elements.watermarkColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                    state.watermark.color = e.target.value;
+                    elements.watermarkColor.value = e.target.value;
+                    render();
+                }
+            });
+
+            // Export controls
+            elements.exportFormat.addEventListener('change', (e) => {
+                state.exportSettings.format = e.target.value;
+                elements.qualityControls.style.display = (e.target.value === 'jpeg' || e.target.value === 'webp') ? 'block' : 'none';
+            });
+
+            elements.exportQuality.addEventListener('input', (e) => {
+                state.exportSettings.quality = parseInt(e.target.value);
+                elements.exportQualityValue.textContent = e.target.value + '%';
+            });
+
+            elements.copyClipboardBtn.addEventListener('click', copyToClipboard);
+
+            // Template controls
+            elements.saveTemplateBtn.addEventListener('click', saveTemplate);
+            elements.loadTemplateBtn.addEventListener('click', loadTemplate);
+            elements.clearTemplatesBtn.addEventListener('click', clearTemplates);
 
             // Preset buttons
             document.querySelectorAll('.preset-button').forEach(btn => {
@@ -1084,6 +1206,9 @@
 
             // Draw text overlay
             drawTextOverlay();
+
+            // Draw watermark
+            drawWatermark();
         }
 
         function drawGradient() {
@@ -1285,6 +1410,64 @@
             ctx.restore();
         }
 
+        // Draw Watermark
+        function drawWatermark() {
+            if (!state.watermark.enabled || !state.watermark.text) return;
+
+            ctx.save();
+
+            // Set watermark properties
+            ctx.font = `${state.watermark.size}px Arial`;
+            ctx.fillStyle = state.watermark.color;
+            const opacity = state.watermark.opacity / 100;
+            ctx.globalAlpha = opacity;
+
+            // Calculate position
+            const padding = 20;
+            let x, y;
+            const textMetrics = ctx.measureText(state.watermark.text);
+            const textWidth = textMetrics.width;
+            const textHeight = state.watermark.size;
+
+            switch (state.watermark.position) {
+                case 'bottom-right':
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'bottom';
+                    x = elements.canvas.width - padding;
+                    y = elements.canvas.height - padding;
+                    break;
+                case 'bottom-left':
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'bottom';
+                    x = padding;
+                    y = elements.canvas.height - padding;
+                    break;
+                case 'top-right':
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'top';
+                    x = elements.canvas.width - padding;
+                    y = padding;
+                    break;
+                case 'top-left':
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+                    x = padding;
+                    y = padding;
+                    break;
+                case 'center':
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    x = elements.canvas.width / 2;
+                    y = elements.canvas.height / 2;
+                    break;
+            }
+
+            // Draw watermark
+            ctx.fillText(state.watermark.text, x, y);
+
+            ctx.restore();
+        }
+
         // Export Function
         function exportImage() {
             if (!state.image) {
@@ -1292,18 +1475,187 @@
                 return;
             }
 
+            // Determine MIME type and file extension
+            let mimeType, extension;
+            let quality = state.exportSettings.quality / 100;
+
+            switch (state.exportSettings.format) {
+                case 'jpeg':
+                    mimeType = 'image/jpeg';
+                    extension = 'jpg';
+                    break;
+                case 'webp':
+                    mimeType = 'image/webp';
+                    extension = 'webp';
+                    break;
+                case 'png':
+                default:
+                    mimeType = 'image/png';
+                    extension = 'png';
+                    quality = undefined; // PNG doesn't use quality
+                    break;
+            }
+
             elements.canvas.toBlob((blob) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `screenshot-${Date.now()}.png`;
+                a.download = `screenshot-${Date.now()}.${extension}`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
 
-                showNotification('Image exported successfully!', 'success');
+                showNotification(`Image exported as ${extension.toUpperCase()}!`, 'success');
+            }, mimeType, quality);
+        }
+
+        // Copy to Clipboard Function
+        function copyToClipboard() {
+            if (!state.image) {
+                showNotification('Please load an image first!', 'error');
+                return;
+            }
+
+            elements.canvas.toBlob((blob) => {
+                const item = new ClipboardItem({ 'image/png': blob });
+                navigator.clipboard.write([item]).then(() => {
+                    showNotification('Image copied to clipboard!', 'success');
+                }).catch((error) => {
+                    showNotification('Failed to copy to clipboard: ' + error.message, 'error');
+                });
             }, 'image/png');
+        }
+
+        // Template Functions
+        function saveTemplate() {
+            const templateName = elements.templateName.value.trim();
+            if (!templateName) {
+                showNotification('Please enter a template name!', 'error');
+                return;
+            }
+
+            // Get all templates from localStorage
+            let templates = {};
+            try {
+                const saved = localStorage.getItem('snapshotpro_templates');
+                if (saved) {
+                    templates = JSON.parse(saved);
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+
+            // Save current settings as template
+            templates[templateName] = {
+                imageTransform: state.imageTransform,
+                imageFilters: state.imageFilters,
+                textOverlay: state.textOverlay,
+                windowOverlay: state.windowOverlay,
+                watermark: state.watermark,
+                gradient: state.gradient,
+                padding: state.padding,
+                scale: state.scale,
+                borderRadius: state.borderRadius,
+                showBorder: state.showBorder,
+                borderWidth: state.borderWidth,
+                borderColor: state.borderColor,
+                shadow: state.shadow,
+                canvas: state.canvas,
+                exportSettings: state.exportSettings
+            };
+
+            // Save to localStorage
+            try {
+                localStorage.setItem('snapshotpro_templates', JSON.stringify(templates));
+                updateTemplateList();
+                showNotification(`Template "${templateName}" saved!`, 'success');
+                elements.templateName.value = '';
+            } catch (error) {
+                showNotification('Error saving template: ' + error.message, 'error');
+            }
+        }
+
+        function loadTemplate() {
+            const templateName = elements.templateList.value;
+            if (!templateName) {
+                showNotification('Please select a template!', 'error');
+                return;
+            }
+
+            try {
+                const saved = localStorage.getItem('snapshotpro_templates');
+                if (!saved) {
+                    showNotification('No templates found!', 'error');
+                    return;
+                }
+
+                const templates = JSON.parse(saved);
+                const template = templates[templateName];
+
+                if (!template) {
+                    showNotification('Template not found!', 'error');
+                    return;
+                }
+
+                // Apply template to state
+                saveStateToHistory();
+                Object.assign(state, template);
+                updateUIFromState();
+                render();
+
+                showNotification(`Template "${templateName}" loaded!`, 'success');
+            } catch (error) {
+                showNotification('Error loading template: ' + error.message, 'error');
+            }
+        }
+
+        function clearTemplates() {
+            if (!confirm('Are you sure you want to delete all templates? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                localStorage.removeItem('snapshotpro_templates');
+                updateTemplateList();
+                showNotification('All templates cleared!', 'success');
+            } catch (error) {
+                showNotification('Error clearing templates: ' + error.message, 'error');
+            }
+        }
+
+        function updateTemplateList() {
+            // Clear current options (except the default)
+            elements.templateList.innerHTML = '<option value="">-- Select Template --</option>';
+
+            try {
+                const saved = localStorage.getItem('snapshotpro_templates');
+                if (!saved) {
+                    elements.templateInfo.textContent = 'No templates saved';
+                    return;
+                }
+
+                const templates = JSON.parse(saved);
+                const templateNames = Object.keys(templates);
+
+                if (templateNames.length === 0) {
+                    elements.templateInfo.textContent = 'No templates saved';
+                    return;
+                }
+
+                // Add template options
+                templateNames.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    elements.templateList.appendChild(option);
+                });
+
+                elements.templateInfo.textContent = `${templateNames.length} template${templateNames.length > 1 ? 's' : ''} saved`;
+            } catch (error) {
+                console.error('Error updating template list:', error);
+                elements.templateInfo.textContent = 'Error loading templates';
+            }
         }
 
         // Reset Function
@@ -1339,6 +1691,18 @@
                 title: 'Screenshot',
                 height: 40,
                 showControls: true
+            };
+            state.watermark = {
+                enabled: false,
+                text: '',
+                position: 'bottom-right',
+                size: 16,
+                opacity: 50,
+                color: '#ffffff'
+            };
+            state.exportSettings = {
+                format: 'png',
+                quality: 92
             };
             state.gradient = {
                 type: 'linear',
@@ -1438,6 +1802,24 @@
             elements.windowOverlayHeightValue.textContent = '40px';
             elements.windowShowControls.checked = true;
 
+            // Watermark
+            elements.watermarkEnabled.checked = false;
+            elements.watermarkControls.style.display = 'none';
+            elements.watermarkText.value = '';
+            elements.watermarkPosition.value = 'bottom-right';
+            elements.watermarkSize.value = 16;
+            elements.watermarkSizeValue.textContent = '16px';
+            elements.watermarkOpacity.value = 50;
+            elements.watermarkOpacityValue.textContent = '50%';
+            elements.watermarkColor.value = '#ffffff';
+            elements.watermarkColorText.value = '#ffffff';
+
+            // Export settings
+            elements.exportFormat.value = 'png';
+            elements.qualityControls.style.display = 'none';
+            elements.exportQuality.value = 92;
+            elements.exportQualityValue.textContent = '92%';
+
             // Reset active buttons
             document.querySelectorAll('.preset-button').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.shadow-preset-btn').forEach(b => b.classList.remove('active'));
@@ -1469,6 +1851,7 @@
             setupEventListeners();
             updateAngleIndicator();
             updateGradientPreview();
+            updateTemplateList();
 
             // Set active defaults
             document.querySelector('.preset-button[data-preset="sunset"]').classList.add('active');

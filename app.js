@@ -464,6 +464,10 @@
 
         // Initialize Canvas Context
         const ctx = elements.canvas.getContext('2d');
+        if (!ctx) {
+            console.error('Failed to get 2D canvas context');
+            showNotification('Canvas not supported in this browser!', 'error');
+        }
 
         // Event Listeners Setup
         function setupEventListeners() {
@@ -515,36 +519,42 @@
                 elements.brightnessValue.textContent = `${e.target.value}%`;
                 render();
             });
+            elements.brightness.addEventListener('change', () => saveStateToHistory());
 
             elements.contrast.addEventListener('input', (e) => {
                 state.imageFilters.contrast = parseInt(e.target.value);
                 elements.contrastValue.textContent = `${e.target.value}%`;
                 render();
             });
+            elements.contrast.addEventListener('change', () => saveStateToHistory());
 
             elements.saturation.addEventListener('input', (e) => {
                 state.imageFilters.saturation = parseInt(e.target.value);
                 elements.saturationValue.textContent = `${e.target.value}%`;
                 render();
             });
+            elements.saturation.addEventListener('change', () => saveStateToHistory());
 
             elements.blur.addEventListener('input', (e) => {
                 state.imageFilters.blur = parseInt(e.target.value);
                 elements.blurValue.textContent = `${e.target.value}px`;
                 render();
             });
+            elements.blur.addEventListener('change', () => saveStateToHistory());
 
             elements.grayscale.addEventListener('input', (e) => {
                 state.imageFilters.grayscale = parseInt(e.target.value);
                 elements.grayscaleValue.textContent = `${e.target.value}%`;
                 render();
             });
+            elements.grayscale.addEventListener('change', () => saveStateToHistory());
 
             elements.sepia.addEventListener('input', (e) => {
                 state.imageFilters.sepia = parseInt(e.target.value);
                 elements.sepiaValue.textContent = `${e.target.value}%`;
                 render();
             });
+            elements.sepia.addEventListener('change', () => saveStateToHistory());
 
             // Drag and Drop
             elements.dropZone.addEventListener('dragover', handleDragOver);
@@ -603,18 +613,21 @@
                 elements.paddingValue.textContent = `${e.target.value}px`;
                 render();
             });
+            elements.padding.addEventListener('change', () => saveStateToHistory());
 
             elements.scale.addEventListener('input', (e) => {
                 state.scale = parseInt(e.target.value);
                 elements.scaleValue.textContent = `${e.target.value}%`;
                 render();
             });
+            elements.scale.addEventListener('change', () => saveStateToHistory());
 
             elements.borderRadius.addEventListener('input', (e) => {
                 state.borderRadius = parseInt(e.target.value);
                 elements.borderRadiusValue.textContent = `${e.target.value}px`;
                 render();
             });
+            elements.borderRadius.addEventListener('change', () => saveStateToHistory());
 
             elements.showBorder.addEventListener('change', (e) => {
                 state.showBorder = e.target.checked;
@@ -627,6 +640,7 @@
                 elements.borderWidthValue.textContent = `${e.target.value}px`;
                 render();
             });
+            elements.borderWidth.addEventListener('change', () => saveStateToHistory());
 
             elements.borderColor.addEventListener('input', (e) => {
                 state.borderColor = e.target.value;
@@ -648,30 +662,35 @@
                 elements.shadowBlurValue.textContent = `${e.target.value}px`;
                 render();
             });
+            elements.shadowBlur.addEventListener('change', () => saveStateToHistory());
 
             elements.shadowSpread.addEventListener('input', (e) => {
                 state.shadow.spread = parseInt(e.target.value);
                 elements.shadowSpreadValue.textContent = `${e.target.value}px`;
                 render();
             });
+            elements.shadowSpread.addEventListener('change', () => saveStateToHistory());
 
             elements.shadowOpacity.addEventListener('input', (e) => {
                 state.shadow.opacity = parseInt(e.target.value);
                 elements.shadowOpacityValue.textContent = `${e.target.value}%`;
                 render();
             });
+            elements.shadowOpacity.addEventListener('change', () => saveStateToHistory());
 
             elements.shadowX.addEventListener('input', (e) => {
                 state.shadow.x = parseInt(e.target.value);
                 elements.shadowXValue.textContent = `${e.target.value}px`;
                 render();
             });
+            elements.shadowX.addEventListener('change', () => saveStateToHistory());
 
             elements.shadowY.addEventListener('input', (e) => {
                 state.shadow.y = parseInt(e.target.value);
                 elements.shadowYValue.textContent = `${e.target.value}px`;
                 render();
             });
+            elements.shadowY.addEventListener('change', () => saveStateToHistory());
 
             elements.shadowColor.addEventListener('input', (e) => {
                 state.shadow.color = e.target.value;
@@ -956,10 +975,11 @@
                 return;
             }
 
+            let url = null;
             try {
                 // Create a blob from the SVG code
                 const blob = new Blob([svgCode], { type: 'image/svg+xml' });
-                const url = URL.createObjectURL(blob);
+                url = URL.createObjectURL(blob);
 
                 const img = new Image();
                 img.onload = () => {
@@ -971,14 +991,16 @@
                     saveStateToHistory();
                     render();
                     showNotification('SVG rendered successfully!', 'success');
-                    URL.revokeObjectURL(url);
+                    if (url) URL.revokeObjectURL(url);
                 };
                 img.onerror = () => {
                     showNotification('Invalid SVG code', 'error');
-                    URL.revokeObjectURL(url);
+                    if (url) URL.revokeObjectURL(url);
                 };
                 img.src = url;
             } catch (error) {
+                // Clean up URL if exception occurs before handlers are set
+                if (url) URL.revokeObjectURL(url);
                 showNotification('Error rendering SVG: ' + error.message, 'error');
             }
         }
@@ -1093,6 +1115,12 @@
 
             let imgWidth = state.image.width * scaleFactor;
             let imgHeight = state.image.height * scaleFactor;
+
+            // Validate image dimensions to prevent division by zero
+            if (imgWidth <= 0 || imgHeight <= 0 || availableWidth <= 0 || availableHeight <= 0) {
+                console.error('Invalid image or canvas dimensions');
+                return;
+            }
 
             // Fit image within available space
             const imgRatio = imgWidth / imgHeight;
@@ -1243,14 +1271,22 @@
             shadowCanvas.height = elements.canvas.height;
             const shadowCtx = shadowCanvas.getContext('2d');
 
-            // Convert hex color to rgba
+            // Convert hex color to rgba with validation
             const shadowColor = state.shadow.color;
             const opacity = state.shadow.opacity / 100;
-            const r = parseInt(shadowColor.slice(1, 3), 16);
-            const g = parseInt(shadowColor.slice(3, 5), 16);
-            const b = parseInt(shadowColor.slice(5, 7), 16);
 
-            shadowCtx.shadowColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            // Validate hex color format
+            const hexMatch = shadowColor.match(/^#([0-9A-Fa-f]{6})$/);
+            if (!hexMatch) {
+                console.warn('Invalid shadow color, using default black');
+                shadowCtx.shadowColor = `rgba(0, 0, 0, ${opacity})`;
+            } else {
+                const r = parseInt(shadowColor.slice(1, 3), 16);
+                const g = parseInt(shadowColor.slice(3, 5), 16);
+                const b = parseInt(shadowColor.slice(5, 7), 16);
+                shadowCtx.shadowColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            }
+
             shadowCtx.shadowBlur = state.shadow.blur;
             shadowCtx.shadowOffsetX = state.shadow.x;
             shadowCtx.shadowOffsetY = state.shadow.y;
@@ -1492,11 +1528,11 @@
                 default:
                     mimeType = 'image/png';
                     extension = 'png';
-                    quality = undefined; // PNG doesn't use quality
                     break;
             }
 
-            elements.canvas.toBlob((blob) => {
+            // PNG doesn't use quality parameter
+            const blobCallback = (blob) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -1507,7 +1543,13 @@
                 URL.revokeObjectURL(url);
 
                 showNotification(`Image exported as ${extension.toUpperCase()}!`, 'success');
-            }, mimeType, quality);
+            };
+
+            if (mimeType === 'image/png') {
+                elements.canvas.toBlob(blobCallback, mimeType);
+            } else {
+                elements.canvas.toBlob(blobCallback, mimeType, quality);
+            }
         }
 
         // Copy to Clipboard Function
@@ -1602,7 +1644,11 @@
                 saveStateToHistory();
                 Object.assign(state, template);
                 updateUIFromState();
-                render();
+
+                // Only render if an image is loaded
+                if (state.image) {
+                    render();
+                }
 
                 showNotification(`Template "${templateName}" loaded!`, 'success');
             } catch (error) {

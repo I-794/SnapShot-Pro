@@ -32,3 +32,4 @@ Persists in localStorage (survives browser refresh)
 Shows template count
 Saves everything: filters, overlays, watermarks, gradients, shadows, canvas size, export settings, etc.
 
+<img width="1320" height="633" alt="image" src="https://github.com/user-attachments/assets/d3b5bf14-8a47-4f67-ad78-270d5f8eeb41" />

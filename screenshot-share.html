@@ -784,6 +784,84 @@
         .collapsible-icon.open {
             transform: rotate(180deg);
         }
+
+        /* Text Elements */
+        .text-elements-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .text-element-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .text-element-item:hover {
+            border-color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .text-element-item.active {
+            border-color: var(--accent-primary);
+            background: var(--accent-light);
+        }
+
+        .text-element-preview {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 8px;
+        }
+
+        .text-element-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .icon-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .icon-btn.delete:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .text-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
     </style>
 </head>
 <body>
@@ -1128,6 +1206,121 @@
 
                 <p class="info-text">Export quality: PNG (Lossless)</p>
             </div>
+
+            <!-- Text Overlay Section -->
+            <div class="sidebar-section">
+                <h3 class="section-title">Text Overlay</h3>
+
+                <button class="btn btn-primary" style="width: 100%; margin-bottom: 16px;" id="add-text-btn">
+                    <span>+</span>
+                    Add Text
+                </button>
+
+                <div id="text-elements-list" class="text-elements-list"></div>
+
+                <div id="text-controls" class="text-controls" style="display: none;">
+                    <div class="control-group">
+                        <label class="control-label">Text Content</label>
+                        <textarea class="control-input" id="text-content" placeholder="Enter your text..." rows="3"></textarea>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Font Family</label>
+                        <select class="control-input" id="text-font">
+                            <option value="Arial">Arial</option>
+                            <option value="Helvetica">Helvetica</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Courier New">Courier New</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Impact">Impact</option>
+                            <option value="Comic Sans MS">Comic Sans MS</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Font Size</label>
+                        <div class="range-group">
+                            <input type="range" class="range-input" id="text-size" min="12" max="200" value="48">
+                            <span class="range-value" id="text-size-value">48px</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Font Weight</label>
+                        <select class="control-input" id="text-weight">
+                            <option value="normal">Normal</option>
+                            <option value="bold">Bold</option>
+                            <option value="lighter">Lighter</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Text Color</label>
+                        <div class="color-picker-wrapper">
+                            <div class="color-preview">
+                                <input type="color" id="text-color" value="#ffffff">
+                            </div>
+                            <input type="text" class="control-input" id="text-color-text" value="#ffffff" style="flex: 1;">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Text Align</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                            <button class="btn btn-secondary text-align-btn active" data-align="left">Left</button>
+                            <button class="btn btn-secondary text-align-btn" data-align="center">Center</button>
+                            <button class="btn btn-secondary text-align-btn" data-align="right">Right</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Position X</label>
+                        <div class="range-group">
+                            <input type="range" class="range-input" id="text-x" min="0" max="100" value="50">
+                            <span class="range-value" id="text-x-value">50%</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Position Y</label>
+                        <div class="range-group">
+                            <input type="range" class="range-input" id="text-y" min="0" max="100" value="50">
+                            <span class="range-value" id="text-y-value">50%</span>
+                        </div>
+                    </div>
+
+                    <div class="toggle-switch">
+                        <span class="toggle-label">Text Shadow</span>
+                        <label class="switch">
+                            <input type="checkbox" id="text-shadow-enabled">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div id="text-shadow-controls" style="display: none;">
+                        <div class="control-group">
+                            <label class="control-label">Shadow Blur</label>
+                            <div class="range-group">
+                                <input type="range" class="range-input" id="text-shadow-blur" min="0" max="20" value="4">
+                                <span class="range-value" id="text-shadow-blur-value">4px</span>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">Shadow Color</label>
+                            <div class="color-picker-wrapper">
+                                <div class="color-preview">
+                                    <input type="color" id="text-shadow-color" value="#000000">
+                                </div>
+                                <input type="text" class="control-input" id="text-shadow-color-text" value="#000000" style="flex: 1;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="info-text">Click on a text element to edit or delete it</p>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -1201,7 +1394,9 @@
             canvas: {
                 width: 1200,
                 height: 675
-            }
+            },
+            textElements: [],
+            currentTextId: null
         };
 
         // Save state to history
@@ -1217,7 +1412,8 @@
                 borderWidth: state.borderWidth,
                 borderColor: state.borderColor,
                 shadow: state.shadow,
-                canvas: state.canvas
+                canvas: state.canvas,
+                textElements: state.textElements
             }));
 
             history.past.push(stateCopy);
@@ -1243,7 +1439,8 @@
                 borderWidth: state.borderWidth,
                 borderColor: state.borderColor,
                 shadow: state.shadow,
-                canvas: state.canvas
+                canvas: state.canvas,
+                textElements: state.textElements
             }));
 
             history.future.push(currentState);
@@ -1251,6 +1448,7 @@
 
             Object.assign(state, previousState);
             updateUIFromState();
+            updateTextElementsList();
             render();
             updateHistoryButtons();
         }
@@ -1270,7 +1468,8 @@
                 borderWidth: state.borderWidth,
                 borderColor: state.borderColor,
                 shadow: state.shadow,
-                canvas: state.canvas
+                canvas: state.canvas,
+                textElements: state.textElements
             }));
 
             history.past.push(currentState);
@@ -1278,6 +1477,7 @@
 
             Object.assign(state, nextState);
             updateUIFromState();
+            updateTextElementsList();
             render();
             updateHistoryButtons();
         }
@@ -1490,7 +1690,29 @@
 
             // Canvas settings
             canvasWidth: document.getElementById('canvas-width'),
-            canvasHeight: document.getElementById('canvas-height')
+            canvasHeight: document.getElementById('canvas-height'),
+
+            // Text controls
+            addTextBtn: document.getElementById('add-text-btn'),
+            textElementsList: document.getElementById('text-elements-list'),
+            textControls: document.getElementById('text-controls'),
+            textContent: document.getElementById('text-content'),
+            textFont: document.getElementById('text-font'),
+            textSize: document.getElementById('text-size'),
+            textSizeValue: document.getElementById('text-size-value'),
+            textWeight: document.getElementById('text-weight'),
+            textColor: document.getElementById('text-color'),
+            textColorText: document.getElementById('text-color-text'),
+            textX: document.getElementById('text-x'),
+            textXValue: document.getElementById('text-x-value'),
+            textY: document.getElementById('text-y'),
+            textYValue: document.getElementById('text-y-value'),
+            textShadowEnabled: document.getElementById('text-shadow-enabled'),
+            textShadowControls: document.getElementById('text-shadow-controls'),
+            textShadowBlur: document.getElementById('text-shadow-blur'),
+            textShadowBlurValue: document.getElementById('text-shadow-blur-value'),
+            textShadowColor: document.getElementById('text-shadow-color'),
+            textShadowColorText: document.getElementById('text-shadow-color-text')
         };
 
         // Initialize Canvas Context
@@ -1764,6 +1986,81 @@
                     btn.classList.add('active');
                 });
             });
+
+            // Text controls
+            elements.addTextBtn.addEventListener('click', addTextElement);
+
+            elements.textContent.addEventListener('input', (e) => {
+                updateCurrentTextElement('content', e.target.value);
+            });
+
+            elements.textFont.addEventListener('change', (e) => {
+                updateCurrentTextElement('font', e.target.value);
+            });
+
+            elements.textSize.addEventListener('input', (e) => {
+                updateCurrentTextElement('size', parseInt(e.target.value));
+                elements.textSizeValue.textContent = `${e.target.value}px`;
+            });
+
+            elements.textWeight.addEventListener('change', (e) => {
+                updateCurrentTextElement('weight', e.target.value);
+            });
+
+            elements.textColor.addEventListener('input', (e) => {
+                updateCurrentTextElement('color', e.target.value);
+                elements.textColorText.value = e.target.value;
+            });
+
+            elements.textColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                    updateCurrentTextElement('color', e.target.value);
+                    elements.textColor.value = e.target.value;
+                }
+            });
+
+            elements.textX.addEventListener('input', (e) => {
+                updateCurrentTextElement('x', parseInt(e.target.value));
+                elements.textXValue.textContent = `${e.target.value}%`;
+            });
+
+            elements.textY.addEventListener('input', (e) => {
+                updateCurrentTextElement('y', parseInt(e.target.value));
+                elements.textYValue.textContent = `${e.target.value}%`;
+            });
+
+            elements.textShadowEnabled.addEventListener('change', (e) => {
+                updateCurrentTextElement('shadowEnabled', e.target.checked);
+                elements.textShadowControls.style.display = e.target.checked ? 'block' : 'none';
+            });
+
+            elements.textShadowBlur.addEventListener('input', (e) => {
+                updateCurrentTextElement('shadowBlur', parseInt(e.target.value));
+                elements.textShadowBlurValue.textContent = `${e.target.value}px`;
+            });
+
+            elements.textShadowColor.addEventListener('input', (e) => {
+                updateCurrentTextElement('shadowColor', e.target.value);
+                elements.textShadowColorText.value = e.target.value;
+            });
+
+            elements.textShadowColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                    updateCurrentTextElement('shadowColor', e.target.value);
+                    elements.textShadowColor.value = e.target.value;
+                }
+            });
+
+            // Text align buttons
+            document.querySelectorAll('.text-align-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    updateCurrentTextElement('align', btn.dataset.align);
+
+                    document.querySelectorAll('.text-align-btn').forEach(b =>
+                        b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
         }
 
         // File Handling
@@ -1953,6 +2250,168 @@
             }
         }
 
+        // Text Element Functions
+        function addTextElement() {
+            saveStateToHistory();
+
+            const newText = {
+                id: Date.now(),
+                content: 'Sample Text',
+                font: 'Arial',
+                size: 48,
+                weight: 'normal',
+                color: '#ffffff',
+                align: 'left',
+                x: 50,
+                y: 50,
+                shadowEnabled: false,
+                shadowBlur: 4,
+                shadowColor: '#000000'
+            };
+
+            state.textElements.push(newText);
+            state.currentTextId = newText.id;
+
+            updateTextElementsList();
+            loadTextIntoControls(newText);
+            render();
+        }
+
+        function deleteTextElement(id) {
+            saveStateToHistory();
+            state.textElements = state.textElements.filter(t => t.id !== id);
+
+            if (state.currentTextId === id) {
+                state.currentTextId = null;
+                elements.textControls.style.display = 'none';
+            }
+
+            updateTextElementsList();
+            render();
+        }
+
+        function selectTextElement(id) {
+            state.currentTextId = id;
+            const textElement = state.textElements.find(t => t.id === id);
+
+            if (textElement) {
+                loadTextIntoControls(textElement);
+            }
+
+            updateTextElementsList();
+        }
+
+        function loadTextIntoControls(textElement) {
+            elements.textControls.style.display = 'flex';
+            elements.textContent.value = textElement.content;
+            elements.textFont.value = textElement.font;
+            elements.textSize.value = textElement.size;
+            elements.textSizeValue.textContent = `${textElement.size}px`;
+            elements.textWeight.value = textElement.weight;
+            elements.textColor.value = textElement.color;
+            elements.textColorText.value = textElement.color;
+            elements.textX.value = textElement.x;
+            elements.textXValue.textContent = `${textElement.x}%`;
+            elements.textY.value = textElement.y;
+            elements.textYValue.textContent = `${textElement.y}%`;
+            elements.textShadowEnabled.checked = textElement.shadowEnabled;
+            elements.textShadowControls.style.display = textElement.shadowEnabled ? 'block' : 'none';
+            elements.textShadowBlur.value = textElement.shadowBlur;
+            elements.textShadowBlurValue.textContent = `${textElement.shadowBlur}px`;
+            elements.textShadowColor.value = textElement.shadowColor;
+            elements.textShadowColorText.value = textElement.shadowColor;
+
+            // Update text align buttons
+            document.querySelectorAll('.text-align-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.align === textElement.align);
+            });
+        }
+
+        function updateCurrentTextElement(property, value) {
+            if (state.currentTextId === null) return;
+
+            const textElement = state.textElements.find(t => t.id === state.currentTextId);
+            if (textElement) {
+                textElement[property] = value;
+                updateTextElementsList();
+                render();
+            }
+        }
+
+        function updateTextElementsList() {
+            const listContainer = elements.textElementsList;
+            listContainer.innerHTML = '';
+
+            state.textElements.forEach(textElement => {
+                const item = document.createElement('div');
+                item.className = 'text-element-item';
+                if (textElement.id === state.currentTextId) {
+                    item.classList.add('active');
+                }
+
+                const preview = document.createElement('div');
+                preview.className = 'text-element-preview';
+                preview.textContent = textElement.content || 'Empty text';
+
+                const actions = document.createElement('div');
+                actions.className = 'text-element-actions';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'icon-btn delete';
+                deleteBtn.innerHTML = '×';
+                deleteBtn.title = 'Delete';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteTextElement(textElement.id);
+                };
+
+                actions.appendChild(deleteBtn);
+
+                item.appendChild(preview);
+                item.appendChild(actions);
+
+                item.onclick = () => selectTextElement(textElement.id);
+
+                listContainer.appendChild(item);
+            });
+        }
+
+        function drawTextElements() {
+            state.textElements.forEach(textElement => {
+                if (!textElement.content) return;
+
+                ctx.save();
+
+                // Set text properties
+                ctx.font = `${textElement.weight} ${textElement.size}px ${textElement.font}`;
+                ctx.fillStyle = textElement.color;
+                ctx.textAlign = textElement.align;
+                ctx.textBaseline = 'middle';
+
+                // Apply shadow if enabled
+                if (textElement.shadowEnabled) {
+                    ctx.shadowColor = textElement.shadowColor;
+                    ctx.shadowBlur = textElement.shadowBlur;
+                    ctx.shadowOffsetX = 2;
+                    ctx.shadowOffsetY = 2;
+                }
+
+                // Calculate position
+                const x = (textElement.x / 100) * elements.canvas.width;
+                const y = (textElement.y / 100) * elements.canvas.height;
+
+                // Draw text (handle multi-line)
+                const lines = textElement.content.split('\n');
+                const lineHeight = textElement.size * 1.2;
+
+                lines.forEach((line, index) => {
+                    ctx.fillText(line, x, y + (index * lineHeight));
+                });
+
+                ctx.restore();
+            });
+        }
+
         // Render Function
         function render() {
             if (!state.image) return;
@@ -2075,6 +2534,9 @@
             if (state.showBorder) {
                 drawBorder(x, y, imgWidth, imgHeight);
             }
+
+            // Draw text elements
+            drawTextElements();
         }
 
         function drawGradient() {
@@ -2230,6 +2692,8 @@
                 width: 1200,
                 height: 675
             };
+            state.textElements = [];
+            state.currentTextId = null;
 
             // Update all UI elements
             elements.brightness.value = 100;
@@ -2291,6 +2755,10 @@
 
             document.querySelector('.preset-button[data-preset="sunset"]').classList.add('active');
             document.querySelector('.shadow-preset-btn[data-shadow="soft"]').classList.add('active');
+
+            // Reset text elements
+            updateTextElementsList();
+            elements.textControls.style.display = 'none';
 
             updateAngleIndicator();
             updateGradientPreview();

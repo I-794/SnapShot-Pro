@@ -4,10 +4,8 @@
             maxSize: 50
         };
 
-        // Application State
-        const state = {
-            image: null,
-            svgCode: null,
+        // Default state values
+        const DEFAULT_STATE = {
             imageTransform: {
                 rotation: 0, // 0, 90, 180, 270
                 flipH: false,
@@ -77,9 +75,16 @@
             }
         };
 
-        // Save state to history
-        function saveStateToHistory() {
-            const stateCopy = JSON.parse(JSON.stringify({
+        // Application State
+        const state = {
+            image: null,
+            svgCode: null,
+            ...JSON.parse(JSON.stringify(DEFAULT_STATE))
+        };
+
+        // Helper function to clone state for history management
+        function cloneState() {
+            return JSON.parse(JSON.stringify({
                 imageTransform: state.imageTransform,
                 imageFilters: state.imageFilters,
                 textOverlay: state.textOverlay,
@@ -95,6 +100,11 @@
                 shadow: state.shadow,
                 canvas: state.canvas
             }));
+        }
+
+        // Save state to history
+        function saveStateToHistory() {
+            const stateCopy = cloneState();
 
             history.past.push(stateCopy);
             if (history.past.length > history.maxSize) {
@@ -108,22 +118,7 @@
         function undo() {
             if (history.past.length === 0) return;
 
-            const currentState = JSON.parse(JSON.stringify({
-                imageTransform: state.imageTransform,
-                imageFilters: state.imageFilters,
-                textOverlay: state.textOverlay,
-                windowOverlay: state.windowOverlay,
-                watermark: state.watermark,
-                gradient: state.gradient,
-                padding: state.padding,
-                scale: state.scale,
-                borderRadius: state.borderRadius,
-                showBorder: state.showBorder,
-                borderWidth: state.borderWidth,
-                borderColor: state.borderColor,
-                shadow: state.shadow,
-                canvas: state.canvas
-            }));
+            const currentState = cloneState();
 
             history.future.push(currentState);
             const previousState = history.past.pop();
@@ -138,22 +133,7 @@
         function redo() {
             if (history.future.length === 0) return;
 
-            const currentState = JSON.parse(JSON.stringify({
-                imageTransform: state.imageTransform,
-                imageFilters: state.imageFilters,
-                textOverlay: state.textOverlay,
-                windowOverlay: state.windowOverlay,
-                watermark: state.watermark,
-                gradient: state.gradient,
-                padding: state.padding,
-                scale: state.scale,
-                borderRadius: state.borderRadius,
-                showBorder: state.showBorder,
-                borderWidth: state.borderWidth,
-                borderColor: state.borderColor,
-                shadow: state.shadow,
-                canvas: state.canvas
-            }));
+            const currentState = cloneState();
 
             history.past.push(currentState);
             const nextState = history.future.pop();
@@ -1706,74 +1686,8 @@
 
         // Reset Function
         function resetToDefaults() {
-            // Reset state
-            state.imageTransform = {
-                rotation: 0,
-                flipH: false,
-                flipV: false
-            };
-            state.imageFilters = {
-                brightness: 100,
-                contrast: 100,
-                saturation: 100,
-                blur: 0,
-                grayscale: 0,
-                sepia: 0
-            };
-            state.textOverlay = {
-                enabled: false,
-                content: '',
-                size: 48,
-                font: 'Arial',
-                color: '#ffffff',
-                bold: false,
-                italic: false,
-                x: 0.5,
-                y: 0.5
-            };
-            state.windowOverlay = {
-                enabled: false,
-                style: 'macos',
-                title: 'Screenshot',
-                height: 40,
-                showControls: true
-            };
-            state.watermark = {
-                enabled: false,
-                text: '',
-                position: 'bottom-right',
-                size: 16,
-                opacity: 50,
-                color: '#ffffff'
-            };
-            state.exportSettings = {
-                format: 'png',
-                quality: 92
-            };
-            state.gradient = {
-                type: 'linear',
-                angle: 135,
-                colors: ['#667eea', '#764ba2'],
-                positions: [0, 100]
-            };
-            state.padding = 60;
-            state.scale = 100;
-            state.borderRadius = 12;
-            state.showBorder = false;
-            state.borderWidth = 2;
-            state.borderColor = '#ffffff';
-            state.shadow = {
-                blur: 40,
-                spread: 10,
-                opacity: 30,
-                x: 0,
-                y: 10,
-                color: '#000000'
-            };
-            state.canvas = {
-                width: 1200,
-                height: 675
-            };
+            // Reset state to defaults
+            Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)));
 
             // Update all UI elements
             elements.brightness.value = 100;
@@ -1906,4 +1820,3 @@
 
         // Start the application
         init();
-    </script>

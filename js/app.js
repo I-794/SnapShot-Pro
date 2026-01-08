@@ -1142,14 +1142,21 @@
             shadowCanvas.height = elements.canvas.height;
             const shadowCtx = shadowCanvas.getContext('2d');
 
-            // Convert hex color to rgba
+            // Convert hex color to rgba with validation
             const shadowColor = state.shadow.color;
             const opacity = state.shadow.opacity / 100;
-            const r = parseInt(shadowColor.slice(1, 3), 16);
-            const g = parseInt(shadowColor.slice(3, 5), 16);
-            const b = parseInt(shadowColor.slice(5, 7), 16);
 
-            shadowCtx.shadowColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            // Validate hex color format
+            const hexMatch = shadowColor.match(/^#([0-9A-Fa-f]{6})$/);
+            if (!hexMatch) {
+                console.warn('Invalid shadow color, using default black');
+                shadowCtx.shadowColor = `rgba(0, 0, 0, ${opacity})`;
+            } else {
+                const r = parseInt(shadowColor.slice(1, 3), 16);
+                const g = parseInt(shadowColor.slice(3, 5), 16);
+                const b = parseInt(shadowColor.slice(5, 7), 16);
+                shadowCtx.shadowColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            }
             shadowCtx.shadowBlur = state.shadow.blur;
             shadowCtx.shadowOffsetX = state.shadow.x;
             shadowCtx.shadowOffsetY = state.shadow.y;

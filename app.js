@@ -4,6 +4,9 @@
             maxSize: 50
         };
 
+        // Multi-image store (Image objects are not JSON-serialisable, kept outside state)
+        let multiImages = []; // Array of { img: Image, dataUrl: string }
+
         // Application State
         const state = {
             image: null,
@@ -74,6 +77,11 @@
             canvas: {
                 width: 1200,
                 height: 675
+            },
+            multiLayout: {
+                type: 'single',
+                spacing: 40,
+                alignment: 'center'
             }
         };
 
@@ -93,7 +101,8 @@
                 borderWidth: state.borderWidth,
                 borderColor: state.borderColor,
                 shadow: state.shadow,
-                canvas: state.canvas
+                canvas: state.canvas,
+                multiLayout: state.multiLayout
             }));
 
             history.past.push(stateCopy);
@@ -122,7 +131,8 @@
                 borderWidth: state.borderWidth,
                 borderColor: state.borderColor,
                 shadow: state.shadow,
-                canvas: state.canvas
+                canvas: state.canvas,
+                multiLayout: state.multiLayout
             }));
 
             history.future.push(currentState);
@@ -152,7 +162,8 @@
                 borderWidth: state.borderWidth,
                 borderColor: state.borderColor,
                 shadow: state.shadow,
-                canvas: state.canvas
+                canvas: state.canvas,
+                multiLayout: state.multiLayout
             }));
 
             history.past.push(currentState);
@@ -267,6 +278,18 @@
 
             updateAngleIndicator();
             updateGradientPreview();
+
+            // Multi layout UI
+            if (elements.layoutSpacing) {
+                elements.layoutSpacing.value = state.multiLayout.spacing;
+                elements.layoutSpacingValue.textContent = `${state.multiLayout.spacing}px`;
+                document.querySelectorAll('.layout-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.layout === state.multiLayout.type);
+                });
+                document.querySelectorAll('.align-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.align === state.multiLayout.alignment);
+                });
+            }
         }
 
         // Gradient Presets
@@ -459,7 +482,13 @@
             clearTemplatesBtn: document.getElementById('clear-templates-btn'),
             templateList: document.getElementById('template-list'),
             loadTemplateBtn: document.getElementById('load-template-btn'),
-            templateInfo: document.getElementById('template-info')
+            templateInfo: document.getElementById('template-info'),
+
+            // Auto layout controls
+            multiImageList: document.getElementById('multi-image-list'),
+            multiFileInput: document.getElementById('multi-file-input'),
+            layoutSpacing: document.getElementById('layout-spacing'),
+            layoutSpacingValue: document.getElementById('layout-spacing-value')
         };
 
         // Initialize Canvas Context
@@ -900,13 +929,50 @@
                     btn.classList.add('active');
                 });
             });
+
+            // Auto layout – layout selector
+            document.querySelectorAll('.layout-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.multiLayout.type = btn.dataset.layout;
+                    document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    render();
+                });
+            });
+
+            // Auto layout – alignment
+            document.querySelectorAll('.align-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.multiLayout.alignment = btn.dataset.align;
+                    document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    render();
+                });
+            });
+
+            // Auto layout – spacing
+            elements.layoutSpacing.addEventListener('input', (e) => {
+                state.multiLayout.spacing = parseInt(e.target.value);
+                elements.layoutSpacingValue.textContent = `${state.multiLayout.spacing}px`;
+                render();
+            });
+
+            // Auto layout – add more images
+            elements.multiFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    loadImages(e.target.files, false);
+                    e.target.value = '';
+                }
+            });
         }
 
         // File Handling
         function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                loadImage(file);
+            const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+            if (files.length > 0) {
+                loadImages(files, true);
             }
         }
 
@@ -927,9 +993,9 @@
             e.stopPropagation();
             elements.uploadZone.classList.remove('drag-over');
 
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                loadImage(file);
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            if (files.length > 0) {
+                loadImages(files, true);
             }
         }
 
@@ -938,28 +1004,110 @@
             for (let item of items) {
                 if (item.type.startsWith('image/')) {
                     const file = item.getAsFile();
-                    loadImage(file);
+                    loadImages([file], true);
                     break;
                 }
             }
         }
 
-        function loadImage(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    state.image = img;
+        // Promise-based single-file loader
+        function loadImageFromFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => resolve({ img, dataUrl: e.target.result });
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Load one or more image files
+        async function loadImages(files, replace = true) {
+            try {
+                const loaded = await Promise.all(Array.from(files).map(loadImageFromFile));
+
+                if (replace) {
+                    multiImages = loaded;
+                } else {
+                    multiImages.push(...loaded);
+                }
+
+                if (multiImages.length > 0) {
+                    state.image = multiImages[0].img;
                     state.svgCode = null;
                     elements.uploadZone.style.display = 'none';
                     elements.canvasWrapper.style.display = 'block';
-                    saveStateToHistory();
-                    render();
-                    showNotification('Image loaded successfully!', 'success');
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+                }
+
+                updateImageThumbnails();
+                saveStateToHistory();
+                render();
+                showNotification(
+                    `${loaded.length} image${loaded.length !== 1 ? 's' : ''} loaded!`,
+                    'success'
+                );
+            } catch (err) {
+                showNotification('Error loading image: ' + err.message, 'error');
+            }
+        }
+
+        // Update thumbnail strip
+        function updateImageThumbnails() {
+            const list = elements.multiImageList;
+            list.innerHTML = '';
+
+            multiImages.forEach((item, i) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'image-thumb-item';
+
+                const img = document.createElement('img');
+                img.src = item.dataUrl;
+                img.alt = `Image ${i + 1}`;
+                thumb.appendChild(img);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'image-thumb-remove';
+                removeBtn.textContent = '×';
+                removeBtn.title = 'Remove image';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeImageFromLayout(i);
+                });
+                thumb.appendChild(removeBtn);
+
+                list.appendChild(thumb);
+            });
+
+            // "+" add button
+            const addBtn = document.createElement('div');
+            addBtn.className = 'image-thumb-add';
+            addBtn.title = 'Add more images';
+            addBtn.textContent = '+';
+            addBtn.addEventListener('click', () => elements.multiFileInput.click());
+            list.appendChild(addBtn);
+        }
+
+        // Remove one image from the layout
+        function removeImageFromLayout(index) {
+            multiImages.splice(index, 1);
+            if (multiImages.length > 0) {
+                state.image = multiImages[0].img;
+            } else {
+                state.image = null;
+                elements.uploadZone.style.display = 'flex';
+                elements.canvasWrapper.style.display = 'none';
+            }
+            updateImageThumbnails();
+            render();
+        }
+
+        // Legacy single-file wrapper (SVG handler still uses this path)
+        function loadImage(file) {
+            loadImages([file], true);
         }
 
         // SVG Code Handling
@@ -983,11 +1131,20 @@
 
                 const img = new Image();
                 img.onload = () => {
+                    // Capture a small thumbnail before revoking the URL
+                    const thumbCanvas = document.createElement('canvas');
+                    thumbCanvas.width = 58;
+                    thumbCanvas.height = 44;
+                    thumbCanvas.getContext('2d').drawImage(img, 0, 0, 58, 44);
+                    const thumbDataUrl = thumbCanvas.toDataURL();
+
                     state.image = img;
                     state.svgCode = svgCode;
+                    multiImages = [{ img, dataUrl: thumbDataUrl }];
                     elements.uploadZone.style.display = 'none';
                     elements.canvasWrapper.style.display = 'block';
                     elements.svgInputContainer.style.display = 'none';
+                    updateImageThumbnails();
                     saveStateToHistory();
                     render();
                     showNotification('SVG rendered successfully!', 'success');
@@ -1092,8 +1249,143 @@
             }
         }
 
+        // ─── Multi-image layout rendering ─────────────────────────────────────
+
+        // Draw a single image fitted inside a slot rectangle
+        function drawImageInSlot(img, slotX, slotY, slotWidth, slotHeight) {
+            const scaleFactor = state.scale / 100;
+
+            let imgW = img.width * scaleFactor;
+            let imgH = img.height * scaleFactor;
+
+            // Fit image within slot maintaining aspect ratio
+            const imgRatio = imgW / imgH;
+            const slotRatio = slotWidth / slotHeight;
+
+            if (imgRatio > slotRatio) {
+                imgW = slotWidth;
+                imgH = slotWidth / imgRatio;
+            } else {
+                imgH = slotHeight;
+                imgW = slotHeight * imgRatio;
+            }
+
+            // Clamp to slot bounds
+            imgW = Math.min(imgW, slotWidth);
+            imgH = Math.min(imgH, slotHeight);
+
+            // Position within slot based on alignment
+            const alignment = state.multiLayout.alignment;
+            let x, y;
+            if (alignment === 'start') {
+                x = slotX;
+                y = slotY;
+            } else if (alignment === 'end') {
+                x = slotX + slotWidth - imgW;
+                y = slotY + slotHeight - imgH;
+            } else {
+                x = slotX + (slotWidth - imgW) / 2;
+                y = slotY + (slotHeight - imgH) / 2;
+            }
+
+            // Shadow
+            if (state.shadow.opacity > 0) {
+                drawShadow(x, y, imgW, imgH);
+            }
+
+            // Image with border-radius clipping
+            ctx.save();
+            const radius = state.borderRadius;
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + imgW - radius, y);
+            ctx.quadraticCurveTo(x + imgW, y, x + imgW, y + radius);
+            ctx.lineTo(x + imgW, y + imgH - radius);
+            ctx.quadraticCurveTo(x + imgW, y + imgH, x + imgW - radius, y + imgH);
+            ctx.lineTo(x + radius, y + imgH);
+            ctx.quadraticCurveTo(x, y + imgH, x, y + imgH - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.clip();
+
+            // Filters
+            const filters = [];
+            if (state.imageFilters.brightness !== 100) filters.push(`brightness(${state.imageFilters.brightness}%)`);
+            if (state.imageFilters.contrast !== 100) filters.push(`contrast(${state.imageFilters.contrast}%)`);
+            if (state.imageFilters.saturation !== 100) filters.push(`saturate(${state.imageFilters.saturation}%)`);
+            if (state.imageFilters.blur > 0) filters.push(`blur(${state.imageFilters.blur}px)`);
+            if (state.imageFilters.grayscale > 0) filters.push(`grayscale(${state.imageFilters.grayscale}%)`);
+            if (state.imageFilters.sepia > 0) filters.push(`sepia(${state.imageFilters.sepia}%)`);
+            if (filters.length > 0) ctx.filter = filters.join(' ');
+
+            ctx.drawImage(img, x, y, imgW, imgH);
+            ctx.restore();
+
+            // Border
+            if (state.showBorder) {
+                drawBorder(x, y, imgW, imgH);
+            }
+        }
+
+        function renderMultiLayout() {
+            const canvas = elements.canvas;
+            canvas.width = state.canvas.width;
+            canvas.height = state.canvas.height;
+
+            drawGradient();
+
+            const pad = state.padding;
+            const gap = state.multiLayout.spacing;
+            const aw = canvas.width - pad * 2;
+            const ah = canvas.height - pad * 2;
+            const layout = state.multiLayout.type;
+
+            let slots = [];
+
+            if (layout === '2-horizontal') {
+                const sw = (aw - gap) / 2;
+                slots = [
+                    { x: pad, y: pad, w: sw, h: ah },
+                    { x: pad + sw + gap, y: pad, w: sw, h: ah }
+                ];
+            } else if (layout === '2-vertical') {
+                const sh = (ah - gap) / 2;
+                slots = [
+                    { x: pad, y: pad, w: aw, h: sh },
+                    { x: pad, y: pad + sh + gap, w: aw, h: sh }
+                ];
+            } else if (layout === '4-grid') {
+                const sw = (aw - gap) / 2;
+                const sh = (ah - gap) / 2;
+                slots = [
+                    { x: pad, y: pad, w: sw, h: sh },
+                    { x: pad + sw + gap, y: pad, w: sw, h: sh },
+                    { x: pad, y: pad + sh + gap, w: sw, h: sh },
+                    { x: pad + sw + gap, y: pad + sh + gap, w: sw, h: sh }
+                ];
+            }
+
+            slots.forEach((slot, i) => {
+                if (i < multiImages.length) {
+                    drawImageInSlot(multiImages[i].img, slot.x, slot.y, slot.w, slot.h);
+                }
+            });
+
+            drawTextOverlay();
+            drawWatermark();
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+
         // Render Function
         function render() {
+            // Dispatch to multi-layout renderer when appropriate
+            if (state.multiLayout.type !== 'single' && multiImages.length > 0) {
+                renderMultiLayout();
+                return;
+            }
+
             if (!state.image) return;
 
             const canvas = elements.canvas;
@@ -1506,7 +1798,7 @@
 
         // Export Function
         function exportImage() {
-            if (!state.image) {
+            if (!state.image && multiImages.length === 0) {
                 showNotification('Please load an image first!', 'error');
                 return;
             }
@@ -1554,7 +1846,7 @@
 
         // Copy to Clipboard Function
         function copyToClipboard() {
-            if (!state.image) {
+            if (!state.image && multiImages.length === 0) {
                 showNotification('Please load an image first!', 'error');
                 return;
             }
@@ -1866,6 +2158,19 @@
             elements.exportQuality.value = 92;
             elements.exportQualityValue.textContent = '92%';
 
+            // Reset multi-layout
+            state.multiLayout = { type: 'single', spacing: 40, alignment: 'center' };
+            if (elements.layoutSpacing) {
+                elements.layoutSpacing.value = 40;
+                elements.layoutSpacingValue.textContent = '40px';
+            }
+            document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+            const singleBtn = document.querySelector('.layout-btn[data-layout="single"]');
+            if (singleBtn) singleBtn.classList.add('active');
+            document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+            const centerBtn = document.querySelector('.align-btn[data-align="center"]');
+            if (centerBtn) centerBtn.classList.add('active');
+
             // Reset active buttons
             document.querySelectorAll('.preset-button').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.shadow-preset-btn').forEach(b => b.classList.remove('active'));
@@ -1898,6 +2203,7 @@
             updateAngleIndicator();
             updateGradientPreview();
             updateTemplateList();
+            updateImageThumbnails();
 
             // Set active defaults
             document.querySelector('.preset-button[data-preset="sunset"]').classList.add('active');

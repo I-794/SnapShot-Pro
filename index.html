@@ -40,7 +40,7 @@
                     </button>
                 </div>
                 <p class="info-text">Or paste (Ctrl+V) / drag & drop an image</p>
-                <input type="file" id="file-input" accept="image/*">
+                <input type="file" id="file-input" accept="image/*" multiple>
 
                 <!-- SVG Code Input -->
                 <div id="svg-input-container" style="display: none; margin-top: 16px;">
@@ -48,6 +48,66 @@
                     <textarea class="control-input" id="svg-code-input" placeholder="<svg>...</svg>" style="min-height: 120px; font-family: monospace; font-size: 12px;"></textarea>
                     <button class="btn btn-primary" style="width: 100%; margin-top: 8px;" id="render-svg-btn">Render SVG</button>
                 </div>
+            </div>
+
+            <!-- Auto Layout Section -->
+            <div class="sidebar-section">
+                <h3 class="section-title">Auto Layout</h3>
+
+                <!-- Image thumbnails -->
+                <div class="image-thumbnail-list" id="multi-image-list">
+                    <div class="image-thumb-add" id="add-more-images-btn" title="Add more images">+</div>
+                </div>
+
+                <!-- Layout options -->
+                <div class="layout-selector">
+                    <div class="layout-btn active" data-layout="single" title="Single Image">
+                        <div class="layout-icon single">
+                            <div class="li-rect"></div>
+                        </div>
+                    </div>
+                    <div class="layout-btn" data-layout="2-horizontal" title="Side by Side">
+                        <div class="layout-icon horizontal">
+                            <div class="li-rect"></div>
+                            <div class="li-rect"></div>
+                        </div>
+                    </div>
+                    <div class="layout-btn" data-layout="2-vertical" title="Stacked">
+                        <div class="layout-icon vertical">
+                            <div class="li-rect"></div>
+                            <div class="li-rect"></div>
+                        </div>
+                    </div>
+                    <div class="layout-btn" data-layout="4-grid" title="2×2 Grid">
+                        <div class="layout-icon grid">
+                            <div class="li-rect"></div>
+                            <div class="li-rect"></div>
+                            <div class="li-rect"></div>
+                            <div class="li-rect"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spacing -->
+                <div class="control-group">
+                    <label class="control-label">SPACING / GAP</label>
+                    <div class="range-group">
+                        <input type="range" class="range-input" id="layout-spacing" min="0" max="120" value="40">
+                        <span class="range-value" id="layout-spacing-value">40px</span>
+                    </div>
+                </div>
+
+                <!-- Alignment -->
+                <div class="control-group">
+                    <label class="control-label">ALIGNMENT</label>
+                    <div class="alignment-btns">
+                        <button class="align-btn" data-align="start">Start</button>
+                        <button class="align-btn active" data-align="center">Center</button>
+                        <button class="align-btn" data-align="end">End</button>
+                    </div>
+                </div>
+
+                <input type="file" id="multi-file-input" accept="image/*" multiple style="display: none;">
             </div>
 
             <!-- Image Editing Section -->

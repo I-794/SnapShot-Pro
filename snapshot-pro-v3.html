@@ -223,6 +223,30 @@
         .checkerboard-info { width: 100%; height: 40px; border-radius: 6px; background-image: conic-gradient(#808080 90deg, transparent 90deg 180deg, #808080 180deg 270deg, transparent 270deg); background-size: 16px 16px; margin-bottom: 8px; border: 1px solid var(--border-color); }
 
         @media (max-width: 1024px) { .sidebar { width: 320px; } }
+
+        /* ─── Auto Layout ─────────────────────────────── */
+        .image-thumbnail-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; min-height: 44px; align-items: center; }
+        .image-thumb-item { position: relative; width: 58px; height: 44px; border-radius: 6px; overflow: hidden; border: 2px solid var(--border-color); flex-shrink: 0; }
+        .image-thumb-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .image-thumb-remove { position: absolute; top: 2px; right: 2px; width: 15px; height: 15px; border-radius: 50%; background: rgba(0,0,0,0.75); color: #fff; font-size: 10px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; padding: 0; transition: background 0.15s; }
+        .image-thumb-remove:hover { background: #e04038; }
+        .image-thumb-add { width: 58px; height: 44px; border-radius: 6px; border: 2px dashed rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; font-weight: 300; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.03); transition: all 0.2s; flex-shrink: 0; user-select: none; }
+        .image-thumb-add:hover { border-color: var(--accent-primary); color: var(--accent-primary); background: var(--accent-light); }
+
+        .layout-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+        .layout-btn { aspect-ratio: 1; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; background: var(--bg-tertiary); transition: all 0.2s; }
+        .layout-btn:hover { border-color: rgba(255,255,255,0.3); background: var(--bg-secondary); }
+        .layout-btn.active { border-color: var(--accent-primary); background: var(--accent-light); }
+        .layout-icon { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 3px; }
+        .layout-icon.horizontal { flex-direction: row; }
+        .layout-icon.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+        .layout-icon .li-rect { background: rgba(255,255,255,0.3); border-radius: 2px; flex: 1; min-width: 0; min-height: 0; }
+        .layout-btn.active .layout-icon .li-rect { background: var(--accent-primary); opacity: 0.75; }
+
+        .alignment-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .align-btn { padding: 8px 4px; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; text-align: center; background: var(--bg-tertiary); color: var(--text-secondary); transition: all 0.2s; }
+        .align-btn:hover { border-color: rgba(255,255,255,0.3); color: var(--text-primary); }
+        .align-btn.active { background: var(--accent-primary); color: #fff; border-color: var(--accent-primary); }
     </style>
 </head>
 <body>
@@ -264,6 +288,53 @@
                 <textarea class="control-input" id="svg-code-input" placeholder="<svg>...</svg>" style="min-height:120px;font-family:monospace;font-size:12px;"></textarea>
                 <button class="btn btn-primary" style="width:100%;margin-top:8px;" id="render-svg-btn">Render SVG</button>
             </div>
+        </div>
+
+        <!-- Auto Layout Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Auto Layout</h3>
+
+            <!-- Loaded image thumbnails -->
+            <div class="image-thumbnail-list" id="layout-image-list">
+                <div class="image-thumb-add" id="layout-add-btn" title="Add more images">+</div>
+            </div>
+
+            <!-- Layout mode buttons -->
+            <div class="layout-selector">
+                <div class="layout-btn active" data-layout="single" title="Single Image">
+                    <div class="layout-icon single"><div class="li-rect"></div></div>
+                </div>
+                <div class="layout-btn" data-layout="2-horizontal" title="Side by Side">
+                    <div class="layout-icon horizontal"><div class="li-rect"></div><div class="li-rect"></div></div>
+                </div>
+                <div class="layout-btn" data-layout="2-vertical" title="Stacked">
+                    <div class="layout-icon vertical"><div class="li-rect"></div><div class="li-rect"></div></div>
+                </div>
+                <div class="layout-btn" data-layout="4-grid" title="2×2 Grid">
+                    <div class="layout-icon grid"><div class="li-rect"></div><div class="li-rect"></div><div class="li-rect"></div><div class="li-rect"></div></div>
+                </div>
+            </div>
+
+            <!-- Gap -->
+            <div class="control-group">
+                <label class="control-label">SPACING / GAP</label>
+                <div class="range-group">
+                    <input type="range" class="range-input" id="layout-spacing" min="0" max="120" value="40">
+                    <span class="range-value" id="layout-spacing-value">40px</span>
+                </div>
+            </div>
+
+            <!-- Alignment -->
+            <div class="control-group">
+                <label class="control-label">ALIGNMENT</label>
+                <div class="alignment-btns">
+                    <button class="align-btn" data-align="start">Start</button>
+                    <button class="align-btn active" data-align="center">Center</button>
+                    <button class="align-btn" data-align="end">End</button>
+                </div>
+            </div>
+
+            <input type="file" id="layout-file-input" accept="image/*" multiple style="display:none;">
         </div>
 
         <!-- Image Editing Section -->
@@ -741,11 +812,15 @@
             redactType: 'pixelate',
             redactIntensity: 12,
             extraImages: [],
-            selectedExtraImage: null
+            selectedExtraImage: null,
+            multiLayout: { type: 'single', spacing: 40, alignment: 'center' }
         };
 
         // Registry of loaded extra Image objects (keyed by id, not serializable)
         const imageRegistry = {};
+
+        // Auto-layout image store: Array of { img: Image, dataUrl: string }
+        let layoutImages = [];
 
         // ==================== HISTORY ====================
         function getHistorySnapshot() {
@@ -775,7 +850,8 @@
                 nextNumber: state.nextNumber,
                 redactType: state.redactType,
                 redactIntensity: state.redactIntensity,
-                extraImages: state.extraImages
+                extraImages: state.extraImages,
+                multiLayout: state.multiLayout
             }));
         }
 
@@ -801,6 +877,7 @@
             state.annotations = JSON.parse(JSON.stringify(snap.annotations || []));
             state.redactions = JSON.parse(JSON.stringify(snap.redactions || []));
             state.extraImages = JSON.parse(JSON.stringify(snap.extraImages || []));
+            state.multiLayout = snap.multiLayout ? { ...snap.multiLayout } : { type: 'single', spacing: 40, alignment: 'center' };
         }
 
         function undo() {
@@ -1046,8 +1123,109 @@
             return FRAME_INSETS[t];
         }
 
+        // ==================== MULTI-LAYOUT RENDERING ====================
+        function drawImageInSlot(img, slotX, slotY, slotW, slotH) {
+            const scale = state.scale / 100;
+            let iw = img.width * scale;
+            let ih = img.height * scale;
+
+            // Fit image within slot
+            const ir = iw / ih, sr = slotW / slotH;
+            if (ir > sr) { iw = slotW; ih = slotW / ir; }
+            else { ih = slotH; iw = slotH * ir; }
+            iw = Math.min(iw, slotW); ih = Math.min(ih, slotH);
+
+            // Align inside slot
+            let x, y;
+            const al = state.multiLayout.alignment;
+            if (al === 'start') { x = slotX; y = slotY; }
+            else if (al === 'end') { x = slotX + slotW - iw; y = slotY + slotH - ih; }
+            else { x = slotX + (slotW - iw) / 2; y = slotY + (slotH - ih) / 2; }
+
+            if (state.shadow.opacity > 0) drawShadow(x, y, iw, ih);
+
+            ctx.save();
+            const rad = state.borderRadius;
+            ctx.beginPath();
+            ctx.moveTo(x + rad, y);
+            ctx.lineTo(x + iw - rad, y);
+            ctx.quadraticCurveTo(x + iw, y, x + iw, y + rad);
+            ctx.lineTo(x + iw, y + ih - rad);
+            ctx.quadraticCurveTo(x + iw, y + ih, x + iw - rad, y + ih);
+            ctx.lineTo(x + rad, y + ih);
+            ctx.quadraticCurveTo(x, y + ih, x, y + ih - rad);
+            ctx.lineTo(x, y + rad);
+            ctx.quadraticCurveTo(x, y, x + rad, y);
+            ctx.closePath();
+            ctx.clip();
+
+            const filters = [];
+            if (state.imageFilters.brightness !== 100) filters.push(`brightness(${state.imageFilters.brightness}%)`);
+            if (state.imageFilters.contrast !== 100) filters.push(`contrast(${state.imageFilters.contrast}%)`);
+            if (state.imageFilters.saturation !== 100) filters.push(`saturate(${state.imageFilters.saturation}%)`);
+            if (state.imageFilters.blur > 0) filters.push(`blur(${state.imageFilters.blur}px)`);
+            if (state.imageFilters.grayscale > 0) filters.push(`grayscale(${state.imageFilters.grayscale}%)`);
+            if (state.imageFilters.sepia > 0) filters.push(`sepia(${state.imageFilters.sepia}%)`);
+            if (filters.length) ctx.filter = filters.join(' ');
+
+            ctx.drawImage(img, x, y, iw, ih);
+            ctx.restore();
+            if (state.showBorder) drawBorder(x, y, iw, ih);
+        }
+
+        function renderMultiLayout(forExport) {
+            const canvas = elements.canvas;
+            canvas.width = state.canvas.width;
+            canvas.height = state.canvas.height;
+
+            drawBackground(forExport);
+
+            const pad = state.padding;
+            const gap = state.multiLayout.spacing;
+            const aw = canvas.width - pad * 2;
+            const ah = canvas.height - pad * 2;
+            const layout = state.multiLayout.type;
+            const imgs = layoutImages;
+
+            let slots = [];
+            if (layout === '2-horizontal') {
+                const sw = (aw - gap) / 2;
+                slots = [
+                    { x: pad, y: pad, w: sw, h: ah },
+                    { x: pad + sw + gap, y: pad, w: sw, h: ah }
+                ];
+            } else if (layout === '2-vertical') {
+                const sh = (ah - gap) / 2;
+                slots = [
+                    { x: pad, y: pad, w: aw, h: sh },
+                    { x: pad, y: pad + sh + gap, w: aw, h: sh }
+                ];
+            } else if (layout === '4-grid') {
+                const sw = (aw - gap) / 2, sh = (ah - gap) / 2;
+                slots = [
+                    { x: pad, y: pad, w: sw, h: sh },
+                    { x: pad + sw + gap, y: pad, w: sw, h: sh },
+                    { x: pad, y: pad + sh + gap, w: sw, h: sh },
+                    { x: pad + sw + gap, y: pad + sh + gap, w: sw, h: sh }
+                ];
+            }
+
+            slots.forEach((s, i) => {
+                if (i < imgs.length) drawImageInSlot(imgs[i].img, s.x, s.y, s.w, s.h);
+            });
+
+            drawTextOverlay();
+            drawWatermark();
+        }
+
         // ==================== RENDER ====================
         function render(forExport) {
+            // Dispatch to multi-layout when a layout mode is active and images are loaded
+            if (state.multiLayout.type !== 'single' && layoutImages.length > 0) {
+                renderMultiLayout(forExport);
+                return;
+            }
+
             if (!state.image) return;
 
             const canvas = elements.canvas;
@@ -2101,22 +2279,87 @@
         }
 
         function loadImage(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    state.image = img;
+            loadLayoutImages([file], true);
+        }
+
+        // ==================== LAYOUT IMAGE LOADING ====================
+        function loadLayoutImageFromFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => resolve({ img, dataUrl: e.target.result });
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function loadLayoutImages(files, replace) {
+            try {
+                const loaded = await Promise.all(Array.from(files).map(loadLayoutImageFromFile));
+                if (replace) { layoutImages = loaded; }
+                else { layoutImages.push(...loaded); }
+
+                if (layoutImages.length > 0) {
+                    state.image = layoutImages[0].img;
                     state.svgCode = null;
                     elements.uploadZone.style.display = 'none';
                     elements.canvasWrapper.style.display = 'block';
                     elements.annotationToolbar.style.display = 'flex';
-                    saveStateToHistory();
-                    render();
-                    showNotification('Image loaded successfully!', 'success');
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+                }
+                updateLayoutImageThumbnails();
+                saveStateToHistory();
+                render();
+                showNotification(`${loaded.length} image${loaded.length !== 1 ? 's' : ''} loaded!`, 'success');
+            } catch (err) {
+                showNotification('Error loading image: ' + err.message, 'error');
+            }
+        }
+
+        function updateLayoutImageThumbnails() {
+            const list = document.getElementById('layout-image-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            layoutImages.forEach((item, i) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'image-thumb-item';
+                const img = document.createElement('img');
+                img.src = item.dataUrl;
+                img.alt = `Image ${i + 1}`;
+                thumb.appendChild(img);
+                const rm = document.createElement('button');
+                rm.className = 'image-thumb-remove';
+                rm.textContent = '×';
+                rm.title = 'Remove';
+                rm.addEventListener('click', (e) => { e.stopPropagation(); removeLayoutImage(i); });
+                thumb.appendChild(rm);
+                list.appendChild(thumb);
+            });
+
+            const addBtn = document.createElement('div');
+            addBtn.className = 'image-thumb-add';
+            addBtn.title = 'Add more images';
+            addBtn.textContent = '+';
+            addBtn.addEventListener('click', () => document.getElementById('layout-file-input').click());
+            list.appendChild(addBtn);
+        }
+
+        function removeLayoutImage(index) {
+            layoutImages.splice(index, 1);
+            if (layoutImages.length > 0) {
+                state.image = layoutImages[0].img;
+            } else {
+                state.image = null;
+                elements.uploadZone.style.display = 'flex';
+                elements.canvasWrapper.style.display = 'none';
+                elements.annotationToolbar.style.display = 'none';
+            }
+            updateLayoutImageThumbnails();
+            render();
         }
 
         function toggleSvgInput() {
@@ -2241,6 +2484,7 @@
             state.annotationColor = '#ff3b30'; state.annotationStrokeWidth = 4;
             state.tool = 'select'; state.selectedAnnotation = null; state.selectedRedaction = null;
             state.nextNumber = 1; state.redactType = 'pixelate'; state.redactIntensity = 12;
+            state.multiLayout = { type: 'single', spacing: 40, alignment: 'center' };
             updateUIFromState();
             updateToolbar();
             document.querySelectorAll('.preset-button').forEach(b => b.classList.remove('active'));
@@ -2363,6 +2607,16 @@
             updateAngleIndicator();
             updateGradientPreview();
             updateToolbar();
+
+            // Multi layout UI sync
+            const lSpEl = document.getElementById('layout-spacing');
+            const lSpVal = document.getElementById('layout-spacing-value');
+            if (lSpEl) {
+                lSpEl.value = state.multiLayout.spacing;
+                lSpVal.textContent = `${state.multiLayout.spacing}px`;
+            }
+            document.querySelectorAll('.layout-btn').forEach(b => b.classList.toggle('active', b.dataset.layout === state.multiLayout.type));
+            document.querySelectorAll('.align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === state.multiLayout.alignment));
         }
 
         function switchBgPanel(mode) {
@@ -2672,6 +2926,46 @@
                 state.selectedAnnotation = null;
                 render();
             });
+
+            // ==================== AUTO LAYOUT ====================
+            document.querySelectorAll('.layout-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.multiLayout.type = btn.dataset.layout;
+                    document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    render();
+                });
+            });
+
+            document.querySelectorAll('.align-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.multiLayout.alignment = btn.dataset.align;
+                    document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    render();
+                });
+            });
+
+            const layoutSpacingEl = document.getElementById('layout-spacing');
+            const layoutSpacingVal = document.getElementById('layout-spacing-value');
+            if (layoutSpacingEl) {
+                layoutSpacingEl.addEventListener('input', (e) => {
+                    state.multiLayout.spacing = parseInt(e.target.value);
+                    layoutSpacingVal.textContent = `${state.multiLayout.spacing}px`;
+                    render();
+                });
+                layoutSpacingEl.addEventListener('change', () => saveStateToHistory());
+            }
+
+            const layoutFileInput = document.getElementById('layout-file-input');
+            if (layoutFileInput) {
+                layoutFileInput.addEventListener('change', (e) => {
+                    const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+                    if (files.length) { loadLayoutImages(files, false); e.target.value = ''; }
+                });
+            }
 
             // ==================== CANVAS MOUSE EVENTS ====================
             elements.canvas.addEventListener('mousedown', canvasMouseDown);
@@ -3434,6 +3728,7 @@
             updateAngleIndicator();
             updateGradientPreview();
             updateTemplateList();
+            updateLayoutImageThumbnails();
 
             // Set active defaults
             const sunsetBtn = document.querySelector('.preset-button[data-preset="sunset"]');

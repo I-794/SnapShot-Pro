@@ -223,6 +223,20 @@
         .checkerboard-info { width: 100%; height: 40px; border-radius: 6px; background-image: conic-gradient(#808080 90deg, transparent 90deg 180deg, #808080 180deg 270deg, transparent 270deg); background-size: 16px 16px; margin-bottom: 8px; border: 1px solid var(--border-color); }
 
         @media (max-width: 1024px) { .sidebar { width: 320px; } }
+
+        /* Auto Layout */
+        .layout-picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 4px; }
+        .layout-btn { padding: 5px; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+        .layout-btn:hover { border-color: var(--accent-primary); }
+        .layout-btn.active { border-color: var(--accent-primary); background: var(--accent-light); }
+        .lp { width: 100%; height: 100%; display: flex; gap: 3px; padding: 4px; box-sizing: border-box; }
+        .lp-img { background: var(--text-tertiary); border-radius: 2px; flex: 1; min-width: 0; min-height: 0; }
+        .lp-col { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+        .lp-row-inner { display: flex; gap: 3px; flex: 1; min-height: 0; }
+        .alignment-buttons { display: flex; gap: 4px; }
+        .align-btn { flex: 1; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .align-btn:hover { border-color: var(--accent-primary); }
+        .align-btn.active { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
     </style>
 </head>
 <body>
@@ -263,6 +277,58 @@
                 <label class="control-label">Paste SVG Code</label>
                 <textarea class="control-input" id="svg-code-input" placeholder="<svg>...</svg>" style="min-height:120px;font-family:monospace;font-size:12px;"></textarea>
                 <button class="btn btn-primary" style="width:100%;margin-top:8px;" id="render-svg-btn">Render SVG</button>
+            </div>
+        </div>
+
+        <!-- Auto Layout Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Auto Layout</h3>
+            <div class="layout-picker-grid">
+                <button class="layout-btn active" data-layout="free" title="Free positioning">
+                    <div class="lp" style="flex-direction:column;">
+                        <div class="lp-img" style="flex:1;"></div>
+                    </div>
+                </button>
+                <button class="layout-btn" data-layout="col-1" title="Stack vertical">
+                    <div class="lp" style="flex-direction:column;">
+                        <div class="lp-img" style="flex:1;"></div>
+                        <div class="lp-img" style="flex:1;"></div>
+                    </div>
+                </button>
+                <button class="layout-btn" data-layout="grid-2x2" title="2×2 Grid">
+                    <div class="lp" style="flex-direction:column;">
+                        <div class="lp-row-inner">
+                            <div class="lp-img"></div>
+                            <div class="lp-img"></div>
+                        </div>
+                        <div class="lp-row-inner">
+                            <div class="lp-img"></div>
+                            <div class="lp-img"></div>
+                        </div>
+                    </div>
+                </button>
+                <button class="layout-btn" data-layout="row-1" title="Side by side">
+                    <div class="lp" style="flex-direction:row;">
+                        <div class="lp-img"></div>
+                        <div class="lp-img"></div>
+                    </div>
+                </button>
+            </div>
+            <div class="divider"></div>
+            <div class="control-group">
+                <label class="control-label">SPACING / GAP</label>
+                <div class="range-group">
+                    <input type="range" class="range-input" id="layout-gap" min="0" max="80" value="40">
+                    <span class="range-value" id="layout-gap-value">40px</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">ALIGNMENT</label>
+                <div class="alignment-buttons">
+                    <button class="align-btn" data-align="start">Start</button>
+                    <button class="align-btn active" data-align="center">Center</button>
+                    <button class="align-btn" data-align="end">End</button>
+                </div>
             </div>
         </div>
 
@@ -741,7 +807,8 @@
             redactType: 'pixelate',
             redactIntensity: 12,
             extraImages: [],
-            selectedExtraImage: null
+            selectedExtraImage: null,
+            autoLayout: { pattern: 'free', gap: 40, align: 'center' }
         };
 
         // Registry of loaded extra Image objects (keyed by id, not serializable)
@@ -775,7 +842,8 @@
                 nextNumber: state.nextNumber,
                 redactType: state.redactType,
                 redactIntensity: state.redactIntensity,
-                extraImages: state.extraImages
+                extraImages: state.extraImages,
+                autoLayout: state.autoLayout
             }));
         }
 
@@ -801,6 +869,7 @@
             state.annotations = JSON.parse(JSON.stringify(snap.annotations || []));
             state.redactions = JSON.parse(JSON.stringify(snap.redactions || []));
             state.extraImages = JSON.parse(JSON.stringify(snap.extraImages || []));
+            state.autoLayout = snap.autoLayout ? { ...snap.autoLayout } : { pattern: 'free', gap: 40, align: 'center' };
         }
 
         function undo() {
@@ -1084,6 +1153,16 @@
 
             const x = (canvas.width - imgWidth) / 2;
             const y = (canvas.height - imgHeight - titleBarHeight - bottomPad) / 2 + titleBarHeight;
+
+            // If auto layout is active (non-free), delegate all image rendering to renderAutoLayout
+            if (state.autoLayout.pattern !== 'free') {
+                renderAutoLayout();
+                // 10. Draw text overlay
+                drawTextOverlay();
+                // 11. Draw watermark
+                drawWatermark();
+                return;
+            }
 
             // 2. Draw shadow
             if (state.shadow.opacity > 0) drawShadow(x, y, imgWidth, imgHeight);
@@ -1876,6 +1955,131 @@
             });
         }
 
+        // ==================== AUTO LAYOUT ====================
+        function drawImageCell(img, x, y, w, h, isMain) {
+            if (!img || w <= 0 || h <= 0) return;
+            // Shadow
+            if (state.shadow.opacity > 0) drawShadow(x, y, w, h);
+            // Rounded clip
+            ctx.save();
+            const radius = state.borderRadius;
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.clip();
+            if (isMain) {
+                ctx.translate(x + w / 2, y + h / 2);
+                if (state.imageTransform.rotation !== 0) ctx.rotate((state.imageTransform.rotation * Math.PI) / 180);
+                ctx.scale(state.imageTransform.flipH ? -1 : 1, state.imageTransform.flipV ? -1 : 1);
+                const filters = [];
+                if (state.imageFilters.brightness !== 100) filters.push(`brightness(${state.imageFilters.brightness}%)`);
+                if (state.imageFilters.contrast !== 100) filters.push(`contrast(${state.imageFilters.contrast}%)`);
+                if (state.imageFilters.saturation !== 100) filters.push(`saturate(${state.imageFilters.saturation}%)`);
+                if (state.imageFilters.blur > 0) filters.push(`blur(${state.imageFilters.blur}px)`);
+                if (state.imageFilters.grayscale > 0) filters.push(`grayscale(${state.imageFilters.grayscale}%)`);
+                if (state.imageFilters.sepia > 0) filters.push(`sepia(${state.imageFilters.sepia}%)`);
+                if (filters.length > 0) ctx.filter = filters.join(' ');
+                let dw = w, dh = h;
+                if (state.imageTransform.rotation === 90 || state.imageTransform.rotation === 270) { dw = h; dh = w; }
+                ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+            } else {
+                ctx.drawImage(img, x, y, w, h);
+            }
+            ctx.restore();
+            if (state.showBorder) drawBorder(x, y, w, h);
+        }
+
+        function renderAutoLayout() {
+            const canvas = elements.canvas;
+            const gap = state.autoLayout.gap;
+            const align = state.autoLayout.align;
+            const pattern = state.autoLayout.pattern;
+            const padding = state.padding;
+
+            // Collect all images in order (main first, then extras)
+            const allImages = [];
+            if (state.image) allImages.push({ img: state.image, isMain: true });
+            state.extraImages.forEach(ei => {
+                const img = imageRegistry[ei.id];
+                if (img) allImages.push({ img, isMain: false });
+            });
+            if (allImages.length === 0) return;
+
+            const availW = canvas.width - padding * 2;
+            const availH = canvas.height - padding * 2;
+
+            const positions = [];
+
+            if (pattern === 'col-1') {
+                // All images stacked vertically
+                const n = allImages.length;
+                const totalGaps = gap * (n - 1);
+                const cellH = (availH - totalGaps) / n;
+                let yPos = padding;
+                allImages.forEach(({ img, isMain }) => {
+                    const ratio = img.width / img.height;
+                    let w = Math.min(cellH * ratio, availW);
+                    let h = w / ratio;
+                    if (h > cellH) { h = cellH; w = h * ratio; }
+                    let x;
+                    if (align === 'start') x = padding;
+                    else if (align === 'end') x = canvas.width - padding - w;
+                    else x = (canvas.width - w) / 2;
+                    positions.push({ img, x, y: yPos + (cellH - h) / 2, w, h, isMain });
+                    yPos += cellH + gap;
+                });
+            } else if (pattern === 'row-1') {
+                // All images side by side
+                const n = allImages.length;
+                const totalGaps = gap * (n - 1);
+                const cellW = (availW - totalGaps) / n;
+                let xPos = padding;
+                allImages.forEach(({ img, isMain }) => {
+                    const ratio = img.width / img.height;
+                    let h = Math.min(cellW / ratio, availH);
+                    let w = h * ratio;
+                    if (w > cellW) { w = cellW; h = w / ratio; }
+                    let y;
+                    if (align === 'start') y = padding;
+                    else if (align === 'end') y = canvas.height - padding - h;
+                    else y = (canvas.height - h) / 2;
+                    positions.push({ img, x: xPos + (cellW - w) / 2, y, w, h, isMain });
+                    xPos += cellW + gap;
+                });
+            } else if (pattern === 'grid-2x2') {
+                // 2-column grid
+                const cols = 2;
+                const rows = Math.ceil(allImages.length / cols);
+                const cellW = (availW - gap * (cols - 1)) / cols;
+                const cellH = (availH - gap * (rows - 1)) / rows;
+                allImages.forEach(({ img, isMain }, i) => {
+                    const col = i % cols;
+                    const row = Math.floor(i / cols);
+                    const cellX = padding + col * (cellW + gap);
+                    const cellY = padding + row * (cellH + gap);
+                    const ratio = img.width / img.height;
+                    let w, h;
+                    if (ratio > cellW / cellH) { w = cellW; h = w / ratio; }
+                    else { h = cellH; w = h * ratio; }
+                    let x, y;
+                    if (align === 'start') { x = cellX; y = cellY; }
+                    else if (align === 'end') { x = cellX + cellW - w; y = cellY + cellH - h; }
+                    else { x = cellX + (cellW - w) / 2; y = cellY + (cellH - h) / 2; }
+                    positions.push({ img, x, y, w, h, isMain });
+                });
+            }
+
+            positions.forEach(({ img, x, y, w, h, isMain }) => drawImageCell(img, x, y, w, h, isMain));
+        }
+
         // ==================== EXPORT ====================
         function exportImage() {
             if (!state.image) { showNotification('Please load an image first!', 'error'); return; }
@@ -2237,6 +2441,7 @@
             state.deviceFrame = { type: null, color: 'dark', url: 'https://example.com', title: 'Screenshot' };
             state.annotations = []; state.redactions = [];
             state.extraImages = []; state.selectedExtraImage = null;
+            state.autoLayout = { pattern: 'free', gap: 40, align: 'center' };
             state.spotlight = { enabled: false, x: 0.2, y: 0.2, w: 0.6, h: 0.6, opacity: 0.65 };
             state.annotationColor = '#ff3b30'; state.annotationStrokeWidth = 4;
             state.tool = 'select'; state.selectedAnnotation = null; state.selectedRedaction = null;
@@ -2360,6 +2565,13 @@
             elements.annColor && (elements.annColor.value = state.annotationColor);
             elements.annStroke && (elements.annStroke.value = String(state.annotationStrokeWidth));
 
+            // Auto layout UI sync
+            const layoutGapEl = document.getElementById('layout-gap');
+            const layoutGapValueEl = document.getElementById('layout-gap-value');
+            if (layoutGapEl) { layoutGapEl.value = state.autoLayout.gap; layoutGapValueEl.textContent = state.autoLayout.gap + 'px'; }
+            document.querySelectorAll('.layout-btn[data-layout]').forEach(b => b.classList.toggle('active', b.dataset.layout === state.autoLayout.pattern));
+            document.querySelectorAll('.align-btn[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === state.autoLayout.align));
+
             updateAngleIndicator();
             updateGradientPreview();
             updateToolbar();
@@ -2405,6 +2617,34 @@
                     loadExtraImage(file);
                     extraFileInput.value = '';
                 }
+            });
+
+            // Auto Layout controls
+            document.querySelectorAll('.layout-btn[data-layout]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.autoLayout.pattern = btn.dataset.layout;
+                    document.querySelectorAll('.layout-btn[data-layout]').forEach(b => b.classList.toggle('active', b.dataset.layout === btn.dataset.layout));
+                    if (state.image) render();
+                });
+            });
+            const layoutGapEl = document.getElementById('layout-gap');
+            const layoutGapValueEl = document.getElementById('layout-gap-value');
+            if (layoutGapEl) {
+                layoutGapEl.addEventListener('input', (e) => {
+                    state.autoLayout.gap = parseInt(e.target.value);
+                    layoutGapValueEl.textContent = e.target.value + 'px';
+                    if (state.autoLayout.pattern !== 'free' && state.image) render();
+                });
+                layoutGapEl.addEventListener('change', () => saveStateToHistory());
+            }
+            document.querySelectorAll('.align-btn[data-align]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.autoLayout.align = btn.dataset.align;
+                    document.querySelectorAll('.align-btn[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === btn.dataset.align));
+                    if (state.autoLayout.pattern !== 'free' && state.image) render();
+                });
             });
 
             elements.svgBtn.addEventListener('click', toggleSvgInput);

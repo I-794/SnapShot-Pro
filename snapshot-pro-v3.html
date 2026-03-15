@@ -255,6 +255,9 @@
                 <button class="btn btn-secondary" style="flex:1;" id="svg-btn"><span>&lt;/&gt;</span> SVG Code</button>
             </div>
             <p class="info-text">Or paste (Ctrl+V) / drag & drop an image</p>
+            <button class="btn btn-secondary" style="width:100%;margin-top:8px;" id="add-image-btn">+ Add Another Image</button>
+            <input type="file" id="extra-file-input" accept="image/*" style="display:none;">
+            <div id="extra-images-list"></div>
             <input type="file" id="file-input" accept="image/*">
             <div id="svg-input-container" style="display:none;margin-top:16px;">
                 <label class="control-label">Paste SVG Code</label>
@@ -335,6 +338,7 @@
                 <div class="toggle-switch"><span class="toggle-label">Bold</span><label class="switch"><input type="checkbox" id="text-bold"><span class="slider"></span></label></div>
                 <div class="toggle-switch"><span class="toggle-label">Italic</span><label class="switch"><input type="checkbox" id="text-italic"><span class="slider"></span></label></div>
                 <button class="btn btn-secondary" style="width:100%;margin-top:8px;" id="remove-text-btn">Remove Text</button>
+                <p class="info-text" style="margin-top:8px;">Tip: Drag text on the canvas to reposition it</p>
             </div>
         </div>
 
@@ -735,8 +739,13 @@
             selectedRedaction: null,
             nextNumber: 1,
             redactType: 'pixelate',
-            redactIntensity: 12
+            redactIntensity: 12,
+            extraImages: [],
+            selectedExtraImage: null
         };
+
+        // Registry of loaded extra Image objects (keyed by id, not serializable)
+        const imageRegistry = {};
 
         // ==================== HISTORY ====================
         function getHistorySnapshot() {
@@ -765,7 +774,8 @@
                 annotationStrokeWidth: state.annotationStrokeWidth,
                 nextNumber: state.nextNumber,
                 redactType: state.redactType,
-                redactIntensity: state.redactIntensity
+                redactIntensity: state.redactIntensity,
+                extraImages: state.extraImages
             }));
         }
 
@@ -790,6 +800,7 @@
             state.spotlight = { ...snap.spotlight };
             state.annotations = JSON.parse(JSON.stringify(snap.annotations || []));
             state.redactions = JSON.parse(JSON.stringify(snap.redactions || []));
+            state.extraImages = JSON.parse(JSON.stringify(snap.extraImages || []));
         }
 
         function undo() {
@@ -990,6 +1001,9 @@
         let drawing = { active: false, startX: 0, startY: 0 };
         let dragOffset = { dx: 0, dy: 0 };
         let isDraggingAnnotation = false;
+        let isDraggingText = false;
+        let textDragOffset = { dx: 0, dy: 0 };
+        let isDraggingExtraImage = false;
 
         // ==================== PRESETS ====================
         const gradientPresets = {
@@ -1129,10 +1143,13 @@
             // 8. Draw annotations (after spotlight)
             drawAnnotations();
 
-            // 9. Draw text overlay
+            // 9. Draw extra images
+            renderExtraImages();
+
+            // 10. Draw text overlay
             drawTextOverlay();
 
-            // 10. Draw watermark
+            // 11. Draw watermark
             drawWatermark();
         }
 
@@ -1221,6 +1238,24 @@
             shadowCtx.quadraticCurveTo(sx, sy, sx + rad, sy);
             shadowCtx.closePath();
             shadowCtx.fill();
+
+            // Punch out the image area so the black fill doesn't bleed through clip anti-aliasing
+            shadowCtx.globalCompositeOperation = 'destination-out';
+            shadowCtx.fillStyle = 'rgba(0,0,0,1)';
+            shadowCtx.beginPath();
+            shadowCtx.moveTo(x + rad, y);
+            shadowCtx.lineTo(x + width - rad, y);
+            shadowCtx.quadraticCurveTo(x + width, y, x + width, y + rad);
+            shadowCtx.lineTo(x + width, y + height - rad);
+            shadowCtx.quadraticCurveTo(x + width, y + height, x + width - rad, y + height);
+            shadowCtx.lineTo(x + rad, y + height);
+            shadowCtx.quadraticCurveTo(x, y + height, x, y + height - rad);
+            shadowCtx.lineTo(x, y + rad);
+            shadowCtx.quadraticCurveTo(x, y, x + rad, y);
+            shadowCtx.closePath();
+            shadowCtx.fill();
+            shadowCtx.globalCompositeOperation = 'source-over';
+
             ctx.drawImage(shadowCanvas, 0, 0);
         }
 
@@ -1734,6 +1769,113 @@
             ctx.restore();
         }
 
+        // ==================== EXTRA IMAGES ====================
+        function renderExtraImages() {
+            state.extraImages.forEach(ei => {
+                const img = imageRegistry[ei.id];
+                if (!img) return;
+                const cw = elements.canvas.width;
+                const ch = elements.canvas.height;
+                const iw = img.width * ei.scaleFrac;
+                const ih = img.height * ei.scaleFrac;
+                const tx = cw * ei.xFrac - iw / 2;
+                const ty = ch * ei.yFrac - ih / 2;
+                ctx.drawImage(img, tx, ty, iw, ih);
+                if (state.selectedExtraImage === ei.id) {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(0,160,255,0.8)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 3]);
+                    ctx.strokeRect(tx - 4, ty - 4, iw + 8, ih + 8);
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                }
+            });
+        }
+
+        function hitTestExtraImageAtPoint(x, y) {
+            const cw = elements.canvas.width;
+            const ch = elements.canvas.height;
+            for (let i = state.extraImages.length - 1; i >= 0; i--) {
+                const ei = state.extraImages[i];
+                const img = imageRegistry[ei.id];
+                if (!img) continue;
+                const iw = img.width * ei.scaleFrac;
+                const ih = img.height * ei.scaleFrac;
+                const tx = cw * ei.xFrac - iw / 2;
+                const ty = ch * ei.yFrac - ih / 2;
+                if (x >= tx && x <= tx + iw && y >= ty && y <= ty + ih) return i;
+            }
+            return -1;
+        }
+
+        function loadExtraImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const id = 'extra_' + Date.now();
+                    imageRegistry[id] = img;
+                    const maxSize = Math.min(elements.canvas.width, elements.canvas.height) * 0.4;
+                    const scaleFrac = Math.min(1.0, maxSize / Math.max(img.width, img.height));
+                    state.extraImages.push({ id, xFrac: 0.5, yFrac: 0.5, scaleFrac });
+                    saveStateToHistory();
+                    render();
+                    updateExtraImagesList();
+                    showNotification('Image added!', 'success');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateExtraImagesList() {
+            const list = document.getElementById('extra-images-list');
+            if (!list) return;
+            list.innerHTML = '';
+            if (state.extraImages.length === 0) {
+                list.innerHTML = '';
+                return;
+            }
+            state.extraImages.forEach((ei, idx) => {
+                const img = imageRegistry[ei.id];
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border-color);cursor:pointer;';
+                item.addEventListener('click', () => {
+                    state.selectedExtraImage = ei.id;
+                    render();
+                });
+                if (img) {
+                    const thumb = document.createElement('canvas');
+                    thumb.width = 40; thumb.height = 40;
+                    const tc = thumb.getContext('2d');
+                    const s = Math.min(40 / img.width, 40 / img.height);
+                    const tw = img.width * s, th = img.height * s;
+                    tc.drawImage(img, (40 - tw) / 2, (40 - th) / 2, tw, th);
+                    thumb.style.cssText = 'border-radius:4px;flex-shrink:0;';
+                    item.appendChild(thumb);
+                }
+                const label = document.createElement('span');
+                label.textContent = `Image ${idx + 1}`;
+                label.style.cssText = 'flex:1;font-size:13px;color:var(--text-primary);';
+                item.appendChild(label);
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '✕';
+                removeBtn.className = 'btn btn-secondary';
+                removeBtn.style.cssText = 'padding:4px 8px;font-size:12px;flex-shrink:0;';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    saveStateToHistory();
+                    state.extraImages.splice(idx, 1);
+                    if (state.selectedExtraImage === ei.id) state.selectedExtraImage = null;
+                    render();
+                    updateExtraImagesList();
+                });
+                item.appendChild(removeBtn);
+                list.appendChild(item);
+            });
+        }
+
         // ==================== EXPORT ====================
         function exportImage() {
             if (!state.image) { showNotification('Please load an image first!', 'error'); return; }
@@ -1799,6 +1941,23 @@
                 if (x >= minX && x <= maxX && y >= minY && y <= maxY) return i;
             }
             return -1;
+        }
+
+        function hitTestText(x, y) {
+            if (!state.textOverlay.enabled || !state.textOverlay.content) return false;
+            const tx = elements.canvas.width * state.textOverlay.x;
+            const ty = elements.canvas.height * state.textOverlay.y;
+            let fontStr = '';
+            if (state.textOverlay.italic) fontStr += 'italic ';
+            if (state.textOverlay.bold) fontStr += 'bold ';
+            fontStr += `${state.textOverlay.size}px ${state.textOverlay.font}`;
+            ctx.save();
+            ctx.font = fontStr;
+            const metrics = ctx.measureText(state.textOverlay.content);
+            ctx.restore();
+            const hw = metrics.width / 2 + 10;
+            const hh = state.textOverlay.size / 2 + 10;
+            return Math.abs(x - tx) <= hw && Math.abs(y - ty) <= hh;
         }
 
         function hitTestRedactions(x, y) {
@@ -2077,6 +2236,7 @@
             state.bgMode = 'gradient'; state.bgColor = '#1a1a2e';
             state.deviceFrame = { type: null, color: 'dark', url: 'https://example.com', title: 'Screenshot' };
             state.annotations = []; state.redactions = [];
+            state.extraImages = []; state.selectedExtraImage = null;
             state.spotlight = { enabled: false, x: 0.2, y: 0.2, w: 0.6, h: 0.6, opacity: 0.65 };
             state.annotationColor = '#ff3b30'; state.annotationStrokeWidth = 4;
             state.tool = 'select'; state.selectedAnnotation = null; state.selectedRedaction = null;
@@ -2235,6 +2395,18 @@
             elements.uploadBtn.addEventListener('click', () => elements.fileInput.click());
             elements.uploadZone.addEventListener('click', () => elements.fileInput.click());
             elements.fileInput.addEventListener('change', handleFileSelect);
+
+            const addImageBtn = document.getElementById('add-image-btn');
+            const extraFileInput = document.getElementById('extra-file-input');
+            if (addImageBtn) addImageBtn.addEventListener('click', () => extraFileInput.click());
+            if (extraFileInput) extraFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    loadExtraImage(file);
+                    extraFileInput.value = '';
+                }
+            });
+
             elements.svgBtn.addEventListener('click', toggleSvgInput);
             elements.renderSvgBtn.addEventListener('click', renderSvgCode);
             elements.exportBtn.addEventListener('click', exportImage);
@@ -2542,7 +2714,14 @@
             const { x, y } = getCanvasCoords(e);
 
             if (state.tool === 'select') {
-                // Hit test annotations
+                // Check text overlay first (drawn on top)
+                if (hitTestText(x, y)) {
+                    isDraggingText = true;
+                    textDragOffset = { dx: x - elements.canvas.width * state.textOverlay.x, dy: y - elements.canvas.height * state.textOverlay.y };
+                    return;
+                }
+
+                // Hit test annotations and redactions
                 const annIdx = hitTestAnnotations(x, y);
                 const redIdx = hitTestRedactions(x, y);
                 if (annIdx !== -1) {
@@ -2551,6 +2730,7 @@
                     const ann = state.annotations[annIdx];
                     dragOffset = { dx: x - ann.x1, dy: y - ann.y1 };
                     isDraggingAnnotation = true;
+                    isDraggingExtraImage = false;
                     render();
                 } else if (redIdx !== -1) {
                     state.selectedRedaction = redIdx;
@@ -2558,12 +2738,28 @@
                     const r = state.redactions[redIdx];
                     dragOffset = { dx: x - r.x, dy: y - r.y };
                     isDraggingAnnotation = true;
+                    isDraggingExtraImage = false;
                     render();
                 } else {
-                    state.selectedAnnotation = null;
-                    state.selectedRedaction = null;
-                    isDraggingAnnotation = false;
-                    render();
+                    // Check extra images
+                    const eiIdx = hitTestExtraImageAtPoint(x, y);
+                    if (eiIdx !== -1) {
+                        const ei = state.extraImages[eiIdx];
+                        state.selectedExtraImage = ei.id;
+                        state.selectedAnnotation = null;
+                        state.selectedRedaction = null;
+                        dragOffset = { dx: x - elements.canvas.width * ei.xFrac, dy: y - elements.canvas.height * ei.yFrac };
+                        isDraggingExtraImage = true;
+                        isDraggingAnnotation = false;
+                        render();
+                    } else {
+                        state.selectedAnnotation = null;
+                        state.selectedRedaction = null;
+                        state.selectedExtraImage = null;
+                        isDraggingAnnotation = false;
+                        isDraggingExtraImage = false;
+                        render();
+                    }
                 }
                 return;
             }
@@ -2576,6 +2772,23 @@
         function canvasMouseMove(e) {
             if (!state.image) return;
             const { x, y } = getCanvasCoords(e);
+
+            if (isDraggingText) {
+                state.textOverlay.x = Math.max(0, Math.min(1, (x - textDragOffset.dx) / elements.canvas.width));
+                state.textOverlay.y = Math.max(0, Math.min(1, (y - textDragOffset.dy) / elements.canvas.height));
+                render();
+                return;
+            }
+
+            if (isDraggingExtraImage && state.selectedExtraImage !== null) {
+                const eiIdx = state.extraImages.findIndex(ei => ei.id === state.selectedExtraImage);
+                if (eiIdx !== -1) {
+                    state.extraImages[eiIdx].xFrac = Math.max(0, Math.min(1, (x - dragOffset.dx) / elements.canvas.width));
+                    state.extraImages[eiIdx].yFrac = Math.max(0, Math.min(1, (y - dragOffset.dy) / elements.canvas.height));
+                    render();
+                }
+                return;
+            }
 
             if (state.tool === 'select' && isDraggingAnnotation) {
                 if (state.selectedAnnotation !== null && state.annotations[state.selectedAnnotation]) {
@@ -2596,12 +2809,31 @@
                 return;
             }
 
+            // Update cursor when hovering over draggable items in select mode
+            if (state.tool === 'select') {
+                const canMove = hitTestText(x, y) || hitTestExtraImageAtPoint(x, y) !== -1 ||
+                                hitTestAnnotations(x, y) !== -1 || hitTestRedactions(x, y) !== -1;
+                elements.canvas.style.cursor = canMove ? 'move' : '';
+            }
+
             if (!drawing.active) return;
             drawPreviewAnnotation(drawing.startX, drawing.startY, x, y);
         }
 
         function canvasMouseUp(e) {
             if (!state.image) return;
+
+            if (isDraggingText) {
+                saveStateToHistory();
+                isDraggingText = false;
+                return;
+            }
+
+            if (isDraggingExtraImage) {
+                saveStateToHistory();
+                isDraggingExtraImage = false;
+                return;
+            }
 
             if (state.tool === 'select') {
                 if (isDraggingAnnotation) {

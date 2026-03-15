@@ -1,0 +1,3219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapShot-Pro v3 - Professional Screenshot Sharing</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #242424;
+            --border-color: #333;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-tertiary: #808080;
+            --accent-primary: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-light: rgba(99, 102, 241, 0.1);
+            --success: #10b981;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f4f5f7;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f0f2f5;
+            --border-color: #e1e4e8;
+            --text-primary: #1a1a2e;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .app-container { display: flex; height: 100vh; width: 100vw; }
+
+        /* Header */
+        .header {
+            position: fixed; top: 0; left: 0; right: 0; height: 60px;
+            background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; padding: 0 24px; z-index: 1000;
+            box-shadow: var(--shadow-sm);
+        }
+        .header-content { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .logo { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+
+        /* Sidebar */
+        .sidebar { width: 360px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); margin-top: 60px; height: calc(100vh - 60px); overflow-y: auto; overflow-x: hidden; }
+        .sidebar::-webkit-scrollbar { width: 8px; }
+        .sidebar::-webkit-scrollbar-track { background: var(--bg-secondary); }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+        .sidebar-section { padding: 24px; border-bottom: 1px solid var(--border-color); }
+        .section-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 16px; }
+
+        /* Main Content */
+        .main-content { flex: 1; margin-top: 60px; padding: 16px 32px 32px; overflow: auto; background: var(--bg-primary); display: flex; flex-direction: column; }
+        .canvas-container { width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        .canvas-wrapper { position: relative; max-width: 100%; transition: all 0.3s ease; }
+        #preview-canvas { display: block; max-width: 100%; max-height: calc(100vh - 180px); border-radius: 8px; box-shadow: var(--shadow-lg); }
+
+        /* Upload Zone */
+        .upload-zone { width: 600px; height: 400px; border: 2px dashed var(--border-color); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; cursor: pointer; transition: all 0.3s ease; background: var(--bg-secondary); }
+        .upload-zone:hover { border-color: var(--accent-primary); background: rgba(99, 102, 241, 0.05); }
+        .upload-zone.drag-over { border-color: var(--accent-primary); background: var(--accent-light); transform: scale(1.02); }
+        .upload-icon { font-size: 48px; color: var(--text-secondary); }
+        .upload-text { text-align: center; }
+        .upload-text h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-primary); }
+        .upload-text p { font-size: 14px; color: var(--text-secondary); }
+
+        /* Form Controls */
+        .control-group { margin-bottom: 20px; }
+        .control-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--text-primary); }
+        .control-input { width: 100%; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 14px; transition: all 0.2s ease; }
+        .control-input:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 3px var(--accent-light); }
+        textarea.control-input { resize: vertical; }
+
+        input[type="range"] { width: 100%; height: 6px; background: var(--bg-tertiary); border-radius: 3px; outline: none; padding: 0; border: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: var(--accent-primary); border-radius: 50%; cursor: pointer; transition: all 0.2s ease; }
+        input[type="range"]::-webkit-slider-thumb:hover { background: var(--accent-hover); transform: scale(1.1); }
+        input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; background: var(--accent-primary); border-radius: 50%; cursor: pointer; border: none; }
+
+        .range-group { display: flex; align-items: center; gap: 12px; }
+        .range-input { flex: 1; }
+        .range-value { min-width: 40px; text-align: right; font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+        /* Color Picker */
+        .color-picker-wrapper { display: flex; gap: 12px; align-items: center; }
+        .color-preview { width: 40px; height: 40px; border-radius: 8px; border: 2px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
+        .color-preview:hover { border-color: var(--accent-primary); transform: scale(1.05); }
+        .color-preview input[type="color"] { position: absolute; top: -10px; left: -10px; width: calc(100% + 20px); height: calc(100% + 20px); border: none; cursor: pointer; }
+
+        /* Gradient Picker */
+        .gradient-stops { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+        .gradient-stop { display: flex; gap: 12px; align-items: center; }
+        .gradient-stop-color { width: 32px; height: 32px; border-radius: 6px; border: 2px solid var(--border-color); cursor: pointer; position: relative; overflow: hidden; }
+        .gradient-stop-color input[type="color"] { position: absolute; top: -10px; left: -10px; width: calc(100% + 20px); height: calc(100% + 20px); border: none; cursor: pointer; }
+        .gradient-stop-position { flex: 1; }
+        .gradient-preview { width: 100%; height: 60px; border-radius: 8px; margin-top: 12px; border: 2px solid var(--border-color); }
+
+        /* Preset Buttons */
+        .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+        .preset-button { height: 60px; border-radius: 8px; border: 2px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; position: relative; overflow: hidden; }
+        .preset-button:hover { border-color: var(--accent-primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .preset-button.active { border-color: var(--accent-primary); box-shadow: 0 0 0 3px var(--accent-light); }
+        .preset-label { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 11px; font-weight: 600; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); padding: 4px; background: linear-gradient(to top, rgba(0,0,0,0.5), transparent); }
+
+        /* Buttons */
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+        .btn-primary { background: var(--accent-primary); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--bg-secondary); border-color: #555; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+        /* Toggle Switch */
+        .toggle-switch { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .toggle-label { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+        .switch { position: relative; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-tertiary); border: 1px solid var(--border-color); transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--text-secondary); transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-primary); border-color: var(--accent-primary); }
+        input:checked + .slider:before { transform: translateX(20px); background-color: white; }
+
+        /* Select Dropdown */
+        select.control-input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+        /* Number Input */
+        input[type="number"].control-input { -moz-appearance: textfield; }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* Angle Input */
+        .angle-input-group { display: flex; gap: 12px; align-items: center; }
+        .angle-visual { width: 40px; height: 40px; border-radius: 8px; background: var(--bg-tertiary); border: 2px solid var(--border-color); position: relative; display: flex; align-items: center; justify-content: center; }
+        .angle-indicator { width: 2px; height: 16px; background: var(--accent-primary); position: absolute; top: 50%; left: 50%; transform-origin: center bottom; border-radius: 2px; }
+
+        /* Shadow Preset Grid */
+        .shadow-preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+        .shadow-preset-btn { padding: 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; text-align: center; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+        .shadow-preset-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .shadow-preset-btn.active { background: var(--accent-light); border-color: var(--accent-primary); color: var(--accent-primary); }
+
+        /* Export Size Grid */
+        .export-size-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .size-preset-btn { padding: 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; text-align: left; }
+        .size-preset-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .size-preset-btn.active { background: var(--accent-light); border-color: var(--accent-primary); color: var(--accent-primary); }
+        .size-preset-label { display: block; font-weight: 600; margin-bottom: 2px; }
+        .size-preset-dims { font-size: 11px; color: var(--text-secondary); }
+
+        /* Notification */
+        .notification { position: fixed; top: 80px; right: 24px; padding: 16px 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px; z-index: 2000; transform: translateX(400px); opacity: 0; transition: all 0.3s ease; }
+        .notification.show { transform: translateX(0); opacity: 1; }
+        .notification.success { border-color: var(--success); }
+        .notification.error { border-color: #ef4444; }
+        .notification-icon { font-size: 20px; }
+        .notification-text { font-size: 14px; font-weight: 500; }
+
+        /* Info Text, Divider */
+        .info-text { font-size: 12px; color: var(--text-tertiary); margin-top: 8px; line-height: 1.5; }
+        .divider { height: 1px; background: var(--border-color); margin: 16px 0; }
+
+        /* Checkbox label */
+        .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary); }
+        .checkbox-label input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent-primary); }
+
+        /* Hidden file input */
+        #file-input { display: none; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Tab buttons (for bgMode) */
+        .tab-row { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg-tertiary); padding: 4px; border-radius: 8px; }
+        .tab-btn { flex: 1; padding: 8px; border: none; background: transparent; color: var(--text-secondary); border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+        .tab-btn.active { background: var(--bg-secondary); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+
+        /* Annotation toolbar */
+        .annotation-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 12px; flex-wrap: wrap; box-shadow: var(--shadow-sm); }
+        .ann-tool-btn { padding: 6px 12px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; white-space: nowrap; }
+        .ann-tool-btn:hover { border-color: var(--accent-primary); background: var(--accent-light); }
+        .ann-tool-btn.active { background: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+
+        /* Canvas cursor changes */
+        #preview-canvas[data-tool="arrow"],
+        #preview-canvas[data-tool="rect"],
+        #preview-canvas[data-tool="circle"],
+        #preview-canvas[data-tool="number"],
+        #preview-canvas[data-tool="redact"],
+        #preview-canvas[data-tool="spotlight"] { cursor: crosshair; }
+        #preview-canvas[data-tool="select"] { cursor: default; }
+
+        /* Shortcuts overlay */
+        .shortcuts-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; align-items: center; justify-content: center; }
+        .shortcuts-modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; min-width: 400px; box-shadow: var(--shadow-lg); }
+        .shortcuts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .shortcuts-header h3 { font-size: 16px; font-weight: 700; }
+        .shortcuts-grid { display: flex; flex-direction: column; gap: 12px; }
+        .shortcut-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .shortcut-item span { color: var(--text-secondary); font-size: 14px; }
+        kbd { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; font-family: monospace; font-size: 12px; color: var(--text-primary); white-space: nowrap; }
+
+        /* Checkerboard for transparent bg preview */
+        .checkerboard-info { width: 100%; height: 40px; border-radius: 6px; background-image: conic-gradient(#808080 90deg, transparent 90deg 180deg, #808080 180deg 270deg, transparent 270deg); background-size: 16px 16px; margin-bottom: 8px; border: 1px solid var(--border-color); }
+
+        @media (max-width: 1024px) { .sidebar { width: 320px; } }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">📸</div>
+                <span>SnapShot-Pro <span style="font-size:13px;font-weight:400;color:var(--text-secondary);">v3</span></span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="theme-toggle-btn" title="Toggle Theme">🌙</button>
+                <button class="btn btn-secondary" id="shortcuts-btn" title="Keyboard Shortcuts">⌨️</button>
+                <button class="btn btn-secondary" id="undo-btn" disabled>↶ Undo</button>
+                <button class="btn btn-secondary" id="redo-btn" disabled>↷ Redo</button>
+                <button class="btn btn-secondary" id="reset-btn">Reset</button>
+                <button class="btn btn-success" id="export-btn">Export Image</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Image Upload Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Image Upload</h3>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button class="btn btn-primary" style="flex:1;" id="upload-btn"><span>📁</span> Choose Image</button>
+                <button class="btn btn-secondary" style="flex:1;" id="svg-btn"><span>&lt;/&gt;</span> SVG Code</button>
+            </div>
+            <p class="info-text">Or paste (Ctrl+V) / drag & drop an image</p>
+            <input type="file" id="file-input" accept="image/*">
+            <div id="svg-input-container" style="display:none;margin-top:16px;">
+                <label class="control-label">Paste SVG Code</label>
+                <textarea class="control-input" id="svg-code-input" placeholder="<svg>...</svg>" style="min-height:120px;font-family:monospace;font-size:12px;"></textarea>
+                <button class="btn btn-primary" style="width:100%;margin-top:8px;" id="render-svg-btn">Render SVG</button>
+            </div>
+        </div>
+
+        <!-- Image Editing Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Image Editing</h3>
+            <label class="control-label">Transform</label>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">
+                <button class="btn btn-secondary" id="rotate-left-btn">↶ 90°</button>
+                <button class="btn btn-secondary" id="rotate-right-btn">↷ 90°</button>
+                <button class="btn btn-secondary" id="flip-h-btn">↔ Flip H</button>
+                <button class="btn btn-secondary" id="flip-v-btn">↕ Flip V</button>
+            </div>
+            <label class="control-label">Filters</label>
+            <div class="control-group">
+                <label class="control-label" style="font-size:12px;margin-bottom:4px;">Brightness</label>
+                <div class="range-group"><input type="range" class="range-input" id="brightness" min="0" max="200" value="100"><span class="range-value" id="brightness-value">100%</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" style="font-size:12px;margin-bottom:4px;">Contrast</label>
+                <div class="range-group"><input type="range" class="range-input" id="contrast" min="0" max="200" value="100"><span class="range-value" id="contrast-value">100%</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" style="font-size:12px;margin-bottom:4px;">Saturation</label>
+                <div class="range-group"><input type="range" class="range-input" id="saturation" min="0" max="200" value="100"><span class="range-value" id="saturation-value">100%</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" style="font-size:12px;margin-bottom:4px;">Blur</label>
+                <div class="range-group"><input type="range" class="range-input" id="blur" min="0" max="20" value="0"><span class="range-value" id="blur-value">0px</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" style="font-size:12px;margin-bottom:4px;">Grayscale</label>
+                <div class="range-group"><input type="range" class="range-input" id="grayscale" min="0" max="100" value="0"><span class="range-value" id="grayscale-value">0%</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" style="font-size:12px;margin-bottom:4px;">Sepia</label>
+                <div class="range-group"><input type="range" class="range-input" id="sepia" min="0" max="100" value="0"><span class="range-value" id="sepia-value">0%</span></div>
+            </div>
+        </div>
+
+        <!-- Text & Annotations Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Text & Annotations</h3>
+            <button class="btn btn-primary" style="width:100%;margin-bottom:12px;" id="add-text-btn">+ Add Text</button>
+            <div id="text-controls" style="display:none;">
+                <div class="control-group">
+                    <label class="control-label">Text Content</label>
+                    <input type="text" class="control-input" id="text-content" placeholder="Enter text...">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Font Size</label>
+                    <div class="range-group"><input type="range" class="range-input" id="text-size" min="12" max="120" value="48"><span class="range-value" id="text-size-value">48px</span></div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Font Family</label>
+                    <select class="control-input" id="text-font">
+                        <option value="Arial">Arial</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Impact">Impact</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Text Color</label>
+                    <div class="color-picker-wrapper">
+                        <div class="color-preview"><input type="color" id="text-color" value="#ffffff"></div>
+                        <input type="text" class="control-input" id="text-color-text" value="#ffffff" style="flex:1;">
+                    </div>
+                </div>
+                <div class="toggle-switch"><span class="toggle-label">Bold</span><label class="switch"><input type="checkbox" id="text-bold"><span class="slider"></span></label></div>
+                <div class="toggle-switch"><span class="toggle-label">Italic</span><label class="switch"><input type="checkbox" id="text-italic"><span class="slider"></span></label></div>
+                <button class="btn btn-secondary" style="width:100%;margin-top:8px;" id="remove-text-btn">Remove Text</button>
+            </div>
+        </div>
+
+        <!-- Background Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Background</h3>
+            <div class="tab-row">
+                <button class="tab-btn active" data-bg="gradient">Gradient</button>
+                <button class="tab-btn" data-bg="solid">Solid</button>
+                <button class="tab-btn" data-bg="transparent">Transparent</button>
+            </div>
+
+            <!-- Gradient Panel -->
+            <div id="bg-gradient-panel">
+                <div class="preset-grid">
+                    <div class="preset-button" data-preset="sunset" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);"><span class="preset-label">Sunset</span></div>
+                    <div class="preset-button" data-preset="ocean" style="background:linear-gradient(135deg,#2E3192 0%,#1BFFFF 100%);"><span class="preset-label">Ocean</span></div>
+                    <div class="preset-button" data-preset="forest" style="background:linear-gradient(135deg,#134E5E 0%,#71B280 100%);"><span class="preset-label">Forest</span></div>
+                    <div class="preset-button" data-preset="fire" style="background:linear-gradient(135deg,#F2994A 0%,#F2C94C 100%);"><span class="preset-label">Fire</span></div>
+                    <div class="preset-button" data-preset="midnight" style="background:linear-gradient(135deg,#0F2027 0%,#203A43 50%,#2C5364 100%);"><span class="preset-label">Midnight</span></div>
+                    <div class="preset-button" data-preset="rose" style="background:linear-gradient(135deg,#ED4264 0%,#FFEDBC 100%);"><span class="preset-label">Rose</span></div>
+                    <div class="preset-button" data-preset="purple" style="background:linear-gradient(135deg,#A8EDEA 0%,#FED6E3 100%);"><span class="preset-label">Purple Dream</span></div>
+                    <div class="preset-button" data-preset="mint" style="background:linear-gradient(135deg,#84fab0 0%,#8fd3f4 100%);"><span class="preset-label">Mint</span></div>
+                </div>
+                <div class="divider"></div>
+                <div class="control-group">
+                    <label class="control-label">Gradient Type</label>
+                    <select class="control-input" id="gradient-type"><option value="linear">Linear</option><option value="radial">Radial</option></select>
+                </div>
+                <div class="control-group" id="gradient-angle-group">
+                    <label class="control-label">Angle</label>
+                    <div class="angle-input-group">
+                        <div class="angle-visual"><div class="angle-indicator" id="angle-indicator"></div></div>
+                        <div class="range-group" style="flex:1;"><input type="range" class="range-input" id="gradient-angle" min="0" max="360" value="135"><span class="range-value" id="gradient-angle-value">135°</span></div>
+                    </div>
+                </div>
+                <div class="gradient-stops">
+                    <div class="gradient-stop">
+                        <div class="gradient-stop-color"><input type="color" id="gradient-color-1" value="#667eea"></div>
+                        <div class="gradient-stop-position"><div class="range-group"><input type="range" class="range-input" id="gradient-pos-1" min="0" max="100" value="0"><span class="range-value" id="gradient-pos-1-value">0%</span></div></div>
+                    </div>
+                    <div class="gradient-stop">
+                        <div class="gradient-stop-color"><input type="color" id="gradient-color-2" value="#764ba2"></div>
+                        <div class="gradient-stop-position"><div class="range-group"><input type="range" class="range-input" id="gradient-pos-2" min="0" max="100" value="100"><span class="range-value" id="gradient-pos-2-value">100%</span></div></div>
+                    </div>
+                </div>
+                <div class="gradient-preview" id="gradient-preview"></div>
+            </div>
+
+            <!-- Solid Panel -->
+            <div id="bg-solid-panel" style="display:none;">
+                <div class="control-group">
+                    <label class="control-label">Background Color</label>
+                    <div class="color-picker-wrapper">
+                        <div class="color-preview"><input type="color" id="bg-solid-color" value="#1a1a2e"></div>
+                        <input type="text" class="control-input" id="bg-solid-color-text" value="#1a1a2e" style="flex:1;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transparent Panel -->
+            <div id="bg-transparent-panel" style="display:none;">
+                <div class="checkerboard-info"></div>
+                <p class="info-text">Canvas will have a transparent background. Export as PNG to preserve transparency. A checkerboard pattern is shown in preview.</p>
+            </div>
+        </div>
+
+        <!-- Image Settings Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Image Settings</h3>
+            <div class="control-group">
+                <label class="control-label">Padding</label>
+                <div class="range-group"><input type="range" class="range-input" id="padding" min="0" max="200" value="60"><span class="range-value" id="padding-value">60px</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Scale</label>
+                <div class="range-group"><input type="range" class="range-input" id="scale" min="50" max="150" value="100"><span class="range-value" id="scale-value">100%</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Border Radius</label>
+                <div class="range-group"><input type="range" class="range-input" id="border-radius" min="0" max="50" value="12"><span class="range-value" id="border-radius-value">12px</span></div>
+            </div>
+            <div class="toggle-switch"><span class="toggle-label">Show Border</span><label class="switch"><input type="checkbox" id="show-border"><span class="slider"></span></label></div>
+            <div class="control-group" id="border-controls" style="display:none;">
+                <label class="control-label">Border Width</label>
+                <div class="range-group"><input type="range" class="range-input" id="border-width" min="1" max="20" value="2"><span class="range-value" id="border-width-value">2px</span></div>
+                <label class="control-label" style="margin-top:12px;">Border Color</label>
+                <div class="color-picker-wrapper">
+                    <div class="color-preview"><input type="color" id="border-color" value="#ffffff"></div>
+                    <input type="text" class="control-input" id="border-color-text" value="#ffffff" style="flex:1;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Device & Window Frame Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Device &amp; Window Frame</h3>
+            <div class="control-group">
+                <label class="control-label">Frame Type</label>
+                <select class="control-input" id="device-frame-type">
+                    <option value="">None</option>
+                    <option value="macos">macOS Window</option>
+                    <option value="windows">Windows Window</option>
+                    <option value="iphone">iPhone 15</option>
+                    <option value="chrome">Chrome Browser</option>
+                    <option value="safari">Safari Browser</option>
+                    <option value="firefox">Firefox Browser</option>
+                </select>
+            </div>
+            <div id="device-frame-controls" style="display:none;">
+                <div class="control-group">
+                    <label class="control-label">Frame Color</label>
+                    <select class="control-input" id="device-frame-color">
+                        <option value="dark">Dark / Space Black</option>
+                        <option value="light">Light / Silver</option>
+                    </select>
+                </div>
+                <div class="control-group" id="frame-url-group" style="display:none;">
+                    <label class="control-label">URL / Title</label>
+                    <input type="text" class="control-input" id="frame-url" placeholder="https://example.com" value="https://example.com">
+                </div>
+                <div class="control-group" id="frame-title-group" style="display:none;">
+                    <label class="control-label">Window Title</label>
+                    <input type="text" class="control-input" id="frame-title" placeholder="Screenshot" value="Screenshot">
+                </div>
+            </div>
+        </div>
+
+        <!-- Shadow Settings Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Shadow Settings</h3>
+            <div class="shadow-preset-grid">
+                <div class="shadow-preset-btn active" data-shadow="soft">Soft</div>
+                <div class="shadow-preset-btn" data-shadow="medium">Medium</div>
+                <div class="shadow-preset-btn" data-shadow="hard">Hard</div>
+                <div class="shadow-preset-btn" data-shadow="none">None</div>
+            </div>
+            <div class="divider"></div>
+            <div class="control-group">
+                <label class="control-label">Shadow Blur</label>
+                <div class="range-group"><input type="range" class="range-input" id="shadow-blur" min="0" max="100" value="40"><span class="range-value" id="shadow-blur-value">40px</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Shadow Spread</label>
+                <div class="range-group"><input type="range" class="range-input" id="shadow-spread" min="0" max="50" value="10"><span class="range-value" id="shadow-spread-value">10px</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Shadow Opacity</label>
+                <div class="range-group"><input type="range" class="range-input" id="shadow-opacity" min="0" max="100" value="30"><span class="range-value" id="shadow-opacity-value">30%</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Offset X</label>
+                <div class="range-group"><input type="range" class="range-input" id="shadow-x" min="-50" max="50" value="0"><span class="range-value" id="shadow-x-value">0px</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Offset Y</label>
+                <div class="range-group"><input type="range" class="range-input" id="shadow-y" min="-50" max="50" value="10"><span class="range-value" id="shadow-y-value">10px</span></div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Shadow Color</label>
+                <div class="color-picker-wrapper">
+                    <div class="color-preview"><input type="color" id="shadow-color" value="#000000"></div>
+                    <input type="text" class="control-input" id="shadow-color-text" value="#000000" style="flex:1;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Privacy Tools Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Privacy Tools</h3>
+            <p class="info-text" style="margin-bottom:12px;">Use the ▓ Redact tool in the toolbar above the canvas to draw redaction boxes.</p>
+            <div class="control-group">
+                <label class="control-label">Redaction Style</label>
+                <select class="control-input" id="redact-type">
+                    <option value="pixelate">Pixelate</option>
+                    <option value="blur">Blur</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Intensity</label>
+                <div class="range-group"><input type="range" class="range-input" id="redact-intensity" min="4" max="40" value="12"><span class="range-value" id="redact-intensity-value">12</span></div>
+            </div>
+            <button class="btn btn-secondary" style="width:100%;" id="clear-redactions-btn">Clear All Redactions</button>
+        </div>
+
+        <!-- Spotlight Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Spotlight Effect</h3>
+            <div class="toggle-switch">
+                <span class="toggle-label">Enable Spotlight</span>
+                <label class="switch"><input type="checkbox" id="spotlight-enabled"><span class="slider"></span></label>
+            </div>
+            <div id="spotlight-controls" style="display:none;margin-top:16px;">
+                <p class="info-text" style="margin-bottom:12px;">Use the ◎ Spotlight tool above the canvas to position the spotlight region by dragging.</p>
+                <div class="control-group">
+                    <label class="control-label">Dim Opacity</label>
+                    <div class="range-group"><input type="range" class="range-input" id="spotlight-opacity" min="10" max="95" value="65"><span class="range-value" id="spotlight-opacity-value">65%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Settings Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Canvas Settings</h3>
+            <div class="control-group">
+                <label class="control-label">Canvas Width</label>
+                <input type="number" class="control-input" id="canvas-width" value="1200" min="400" max="4000" step="100">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Canvas Height</label>
+                <input type="number" class="control-input" id="canvas-height" value="675" min="400" max="4000" step="100">
+            </div>
+            <div class="export-size-grid">
+                <div class="size-preset-btn" data-size="twitter"><span class="size-preset-label">Twitter</span><span class="size-preset-dims">1200 × 675</span></div>
+                <div class="size-preset-btn" data-size="instagram"><span class="size-preset-label">Instagram</span><span class="size-preset-dims">1080 × 1080</span></div>
+                <div class="size-preset-btn" data-size="facebook"><span class="size-preset-label">Facebook</span><span class="size-preset-dims">1200 × 630</span></div>
+                <div class="size-preset-btn" data-size="linkedin"><span class="size-preset-label">LinkedIn</span><span class="size-preset-dims">1200 × 627</span></div>
+            </div>
+            <p class="info-text">Export quality: PNG (Lossless)</p>
+        </div>
+
+        <!-- Watermark Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Watermark</h3>
+            <div class="toggle-switch"><span class="toggle-label">Enable Watermark</span><label class="switch"><input type="checkbox" id="watermark-enabled"><span class="slider"></span></label></div>
+            <div id="watermark-controls" style="display:none;margin-top:16px;">
+                <div class="control-group">
+                    <label class="control-label">Watermark Text</label>
+                    <input type="text" class="control-input" id="watermark-text" placeholder="Your watermark..." value="">
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Position</label>
+                    <select class="control-input" id="watermark-position">
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="top-left">Top Left</option>
+                        <option value="center">Center</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Font Size</label>
+                    <div class="range-group"><input type="range" class="range-input" id="watermark-size" min="10" max="48" value="16"><span class="range-value" id="watermark-size-value">16px</span></div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Opacity</label>
+                    <div class="range-group"><input type="range" class="range-input" id="watermark-opacity" min="0" max="100" value="50"><span class="range-value" id="watermark-opacity-value">50%</span></div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Color</label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="color" id="watermark-color" value="#ffffff" style="width:60px;height:40px;border-radius:6px;border:1px solid rgba(0,0,0,0.1);cursor:pointer;">
+                        <input type="text" class="control-input" id="watermark-color-text" value="#ffffff" placeholder="#ffffff" style="flex:1;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Settings Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Export Settings</h3>
+            <div class="control-group">
+                <label class="control-label">Export Format</label>
+                <select class="control-input" id="export-format">
+                    <option value="png">PNG (Lossless)</option>
+                    <option value="jpeg">JPEG</option>
+                    <option value="webp">WebP</option>
+                </select>
+            </div>
+            <div id="quality-controls" style="display:none;">
+                <div class="control-group">
+                    <label class="control-label">Quality</label>
+                    <div class="range-group"><input type="range" class="range-input" id="export-quality" min="1" max="100" value="92"><span class="range-value" id="export-quality-value">92%</span></div>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%;margin-top:8px;" id="copy-clipboard-btn">📋 Copy to Clipboard</button>
+            <button class="btn btn-secondary" style="width:100%;margin-top:8px;" id="export-html-btn">🌐 Export as HTML Card</button>
+        </div>
+
+        <!-- Templates Section -->
+        <div class="sidebar-section">
+            <h3 class="section-title">Templates</h3>
+            <div class="control-group">
+                <label class="control-label">Template Name</label>
+                <input type="text" class="control-input" id="template-name" placeholder="My Template">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button class="btn btn-primary" style="flex:1;" id="save-template-btn">💾 Save</button>
+                <button class="btn btn-secondary" style="flex:1;" id="clear-templates-btn">🗑 Clear All</button>
+            </div>
+            <div class="control-group">
+                <label class="control-label">Load Template</label>
+                <select class="control-input" id="template-list"><option value="">-- Select Template --</option></select>
+            </div>
+            <button class="btn btn-secondary" style="width:100%;" id="load-template-btn">Load Template</button>
+            <p class="info-text" id="template-info">No templates saved</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Annotation Toolbar -->
+        <div class="annotation-toolbar" id="annotation-toolbar" style="display:none;">
+            <button class="ann-tool-btn active" data-tool="select">↖ Select</button>
+            <button class="ann-tool-btn" data-tool="arrow">→ Arrow</button>
+            <button class="ann-tool-btn" data-tool="rect">▭ Rect</button>
+            <button class="ann-tool-btn" data-tool="circle">○ Circle</button>
+            <button class="ann-tool-btn" data-tool="number">① Number</button>
+            <button class="ann-tool-btn" data-tool="redact">▓ Redact</button>
+            <button class="ann-tool-btn" data-tool="spotlight">◎ Spotlight</button>
+            <div style="width:1px;background:var(--border-color);margin:0 4px;align-self:stretch;"></div>
+            <input type="color" id="ann-color" value="#ff3b30" title="Annotation Color" style="width:32px;height:32px;border-radius:6px;border:2px solid var(--border-color);cursor:pointer;">
+            <select id="ann-stroke" style="padding:4px 8px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;">
+                <option value="2">Thin</option>
+                <option value="4" selected>Medium</option>
+                <option value="6">Thick</option>
+                <option value="8">Bold</option>
+            </select>
+            <button id="ann-delete-btn" class="ann-tool-btn" style="margin-left:4px;">🗑 Delete</button>
+            <button id="ann-clear-btn" class="ann-tool-btn">Clear All</button>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="canvas-container" id="drop-zone">
+            <div class="upload-zone" id="upload-zone">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">
+                    <h3>Drop your screenshot here</h3>
+                    <p>or click to browse • Supports PNG, JPG, WebP</p>
+                </div>
+            </div>
+            <div class="canvas-wrapper" id="canvas-wrapper" style="display:none;">
+                <canvas id="preview-canvas" data-tool="select"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification -->
+<div class="notification" id="notification">
+    <span class="notification-icon">✓</span>
+    <span class="notification-text" id="notification-text">Image exported successfully!</span>
+</div>
+
+<!-- Shortcuts Overlay -->
+<div class="shortcuts-overlay" id="shortcuts-overlay" style="display:none;">
+    <div class="shortcuts-modal">
+        <div class="shortcuts-header">
+            <h3>Keyboard Shortcuts</h3>
+            <button id="close-shortcuts-btn" class="btn btn-secondary" style="padding:6px 12px;">✕</button>
+        </div>
+        <div class="shortcuts-grid">
+            <div class="shortcut-item"><kbd>Ctrl+S</kbd><span>Export image</span></div>
+            <div class="shortcut-item"><kbd>Ctrl+Z</kbd><span>Undo</span></div>
+            <div class="shortcut-item"><kbd>Ctrl+Y</kbd><span>Redo</span></div>
+            <div class="shortcut-item"><kbd>Ctrl+Shift+C</kbd><span>Copy to clipboard</span></div>
+            <div class="shortcut-item"><kbd>Delete / Backspace</kbd><span>Delete selected</span></div>
+            <div class="shortcut-item"><kbd>Escape</kbd><span>Deselect / Select tool</span></div>
+            <div class="shortcut-item"><kbd>?</kbd><span>Toggle this overlay</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+        // ==================== STATE ====================
+        const history = { past: [], future: [], maxSize: 50 };
+
+        const state = {
+            image: null,
+            svgCode: null,
+            imageTransform: { rotation: 0, flipH: false, flipV: false },
+            imageFilters: { brightness: 100, contrast: 100, saturation: 100, blur: 0, grayscale: 0, sepia: 0 },
+            textOverlay: { enabled: false, content: '', size: 48, font: 'Arial', color: '#ffffff', bold: false, italic: false, x: 0.5, y: 0.5 },
+            windowOverlay: { enabled: false, style: 'macos', title: 'Screenshot', height: 40, showControls: true },
+            watermark: { enabled: false, text: '', position: 'bottom-right', size: 16, opacity: 50, color: '#ffffff' },
+            exportSettings: { format: 'png', quality: 92 },
+            gradient: { type: 'linear', angle: 135, colors: ['#667eea', '#764ba2'], positions: [0, 100] },
+            padding: 60,
+            scale: 100,
+            borderRadius: 12,
+            showBorder: false,
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            shadow: { blur: 40, spread: 10, opacity: 30, x: 0, y: 10, color: '#000000' },
+            canvas: { width: 1200, height: 675 },
+            // V3 additions
+            theme: 'dark',
+            bgMode: 'gradient',
+            bgColor: '#1a1a2e',
+            deviceFrame: { type: null, color: 'dark', url: 'https://example.com', title: 'Screenshot' },
+            annotations: [],
+            redactions: [],
+            spotlight: { enabled: false, x: 0.2, y: 0.2, w: 0.6, h: 0.6, opacity: 0.65 },
+            annotationColor: '#ff3b30',
+            annotationStrokeWidth: 4,
+            tool: 'select',
+            selectedAnnotation: null,
+            selectedRedaction: null,
+            nextNumber: 1,
+            redactType: 'pixelate',
+            redactIntensity: 12
+        };
+
+        // ==================== HISTORY ====================
+        function getHistorySnapshot() {
+            return JSON.parse(JSON.stringify({
+                imageTransform: state.imageTransform,
+                imageFilters: state.imageFilters,
+                textOverlay: state.textOverlay,
+                windowOverlay: state.windowOverlay,
+                watermark: state.watermark,
+                gradient: state.gradient,
+                padding: state.padding,
+                scale: state.scale,
+                borderRadius: state.borderRadius,
+                showBorder: state.showBorder,
+                borderWidth: state.borderWidth,
+                borderColor: state.borderColor,
+                shadow: state.shadow,
+                canvas: state.canvas,
+                bgMode: state.bgMode,
+                bgColor: state.bgColor,
+                deviceFrame: state.deviceFrame,
+                annotations: state.annotations,
+                redactions: state.redactions,
+                spotlight: state.spotlight,
+                annotationColor: state.annotationColor,
+                annotationStrokeWidth: state.annotationStrokeWidth,
+                nextNumber: state.nextNumber,
+                redactType: state.redactType,
+                redactIntensity: state.redactIntensity
+            }));
+        }
+
+        function saveStateToHistory() {
+            history.past.push(getHistorySnapshot());
+            if (history.past.length > history.maxSize) history.past.shift();
+            history.future = [];
+            updateHistoryButtons();
+        }
+
+        function restoreFromSnapshot(snap) {
+            Object.assign(state, snap);
+            state.imageTransform = { ...snap.imageTransform };
+            state.imageFilters = { ...snap.imageFilters };
+            state.textOverlay = { ...snap.textOverlay };
+            state.windowOverlay = { ...snap.windowOverlay };
+            state.watermark = { ...snap.watermark };
+            state.gradient = { ...snap.gradient, colors: [...snap.gradient.colors], positions: [...snap.gradient.positions] };
+            state.canvas = { ...snap.canvas };
+            state.shadow = { ...snap.shadow };
+            state.deviceFrame = { ...snap.deviceFrame };
+            state.spotlight = { ...snap.spotlight };
+            state.annotations = JSON.parse(JSON.stringify(snap.annotations || []));
+            state.redactions = JSON.parse(JSON.stringify(snap.redactions || []));
+        }
+
+        function undo() {
+            if (history.past.length === 0) return;
+            history.future.push(getHistorySnapshot());
+            const prev = history.past.pop();
+            restoreFromSnapshot(prev);
+            updateUIFromState();
+            render();
+            updateHistoryButtons();
+        }
+
+        function redo() {
+            if (history.future.length === 0) return;
+            history.past.push(getHistorySnapshot());
+            const next = history.future.pop();
+            restoreFromSnapshot(next);
+            updateUIFromState();
+            render();
+            updateHistoryButtons();
+        }
+
+        function updateHistoryButtons() {
+            elements.undoBtn.disabled = history.past.length === 0;
+            elements.redoBtn.disabled = history.future.length === 0;
+        }
+
+        // ==================== DOM ELEMENTS ====================
+        const elements = {
+            uploadZone: document.getElementById('upload-zone'),
+            canvasWrapper: document.getElementById('canvas-wrapper'),
+            canvas: document.getElementById('preview-canvas'),
+            fileInput: document.getElementById('file-input'),
+            uploadBtn: document.getElementById('upload-btn'),
+            svgBtn: document.getElementById('svg-btn'),
+            renderSvgBtn: document.getElementById('render-svg-btn'),
+            svgInputContainer: document.getElementById('svg-input-container'),
+            svgCodeInput: document.getElementById('svg-code-input'),
+            exportBtn: document.getElementById('export-btn'),
+            resetBtn: document.getElementById('reset-btn'),
+            undoBtn: document.getElementById('undo-btn'),
+            redoBtn: document.getElementById('redo-btn'),
+            dropZone: document.getElementById('drop-zone'),
+            notification: document.getElementById('notification'),
+            notificationText: document.getElementById('notification-text'),
+            themeToggleBtn: document.getElementById('theme-toggle-btn'),
+            shortcutsBtn: document.getElementById('shortcuts-btn'),
+            shortcutsOverlay: document.getElementById('shortcuts-overlay'),
+            closeShortcutsBtn: document.getElementById('close-shortcuts-btn'),
+            annotationToolbar: document.getElementById('annotation-toolbar'),
+
+            // Image editing
+            rotateLeftBtn: document.getElementById('rotate-left-btn'),
+            rotateRightBtn: document.getElementById('rotate-right-btn'),
+            flipHBtn: document.getElementById('flip-h-btn'),
+            flipVBtn: document.getElementById('flip-v-btn'),
+            brightness: document.getElementById('brightness'),
+            brightnessValue: document.getElementById('brightness-value'),
+            contrast: document.getElementById('contrast'),
+            contrastValue: document.getElementById('contrast-value'),
+            saturation: document.getElementById('saturation'),
+            saturationValue: document.getElementById('saturation-value'),
+            blur: document.getElementById('blur'),
+            blurValue: document.getElementById('blur-value'),
+            grayscale: document.getElementById('grayscale'),
+            grayscaleValue: document.getElementById('grayscale-value'),
+            sepia: document.getElementById('sepia'),
+            sepiaValue: document.getElementById('sepia-value'),
+
+            // Gradient controls
+            gradientType: document.getElementById('gradient-type'),
+            gradientAngle: document.getElementById('gradient-angle'),
+            gradientAngleValue: document.getElementById('gradient-angle-value'),
+            gradientAngleGroup: document.getElementById('gradient-angle-group'),
+            angleIndicator: document.getElementById('angle-indicator'),
+            gradientColor1: document.getElementById('gradient-color-1'),
+            gradientColor2: document.getElementById('gradient-color-2'),
+            gradientPos1: document.getElementById('gradient-pos-1'),
+            gradientPos2: document.getElementById('gradient-pos-2'),
+            gradientPos1Value: document.getElementById('gradient-pos-1-value'),
+            gradientPos2Value: document.getElementById('gradient-pos-2-value'),
+            gradientPreview: document.getElementById('gradient-preview'),
+
+            // Background panels
+            bgGradientPanel: document.getElementById('bg-gradient-panel'),
+            bgSolidPanel: document.getElementById('bg-solid-panel'),
+            bgTransparentPanel: document.getElementById('bg-transparent-panel'),
+            bgSolidColor: document.getElementById('bg-solid-color'),
+            bgSolidColorText: document.getElementById('bg-solid-color-text'),
+
+            // Image settings
+            padding: document.getElementById('padding'),
+            paddingValue: document.getElementById('padding-value'),
+            scale: document.getElementById('scale'),
+            scaleValue: document.getElementById('scale-value'),
+            borderRadius: document.getElementById('border-radius'),
+            borderRadiusValue: document.getElementById('border-radius-value'),
+            showBorder: document.getElementById('show-border'),
+            borderControls: document.getElementById('border-controls'),
+            borderWidth: document.getElementById('border-width'),
+            borderWidthValue: document.getElementById('border-width-value'),
+            borderColor: document.getElementById('border-color'),
+            borderColorText: document.getElementById('border-color-text'),
+
+            // Device frame
+            deviceFrameType: document.getElementById('device-frame-type'),
+            deviceFrameControls: document.getElementById('device-frame-controls'),
+            deviceFrameColor: document.getElementById('device-frame-color'),
+            frameUrlGroup: document.getElementById('frame-url-group'),
+            frameTitleGroup: document.getElementById('frame-title-group'),
+            frameUrl: document.getElementById('frame-url'),
+            frameTitle: document.getElementById('frame-title'),
+
+            // Shadow settings
+            shadowBlur: document.getElementById('shadow-blur'),
+            shadowBlurValue: document.getElementById('shadow-blur-value'),
+            shadowSpread: document.getElementById('shadow-spread'),
+            shadowSpreadValue: document.getElementById('shadow-spread-value'),
+            shadowOpacity: document.getElementById('shadow-opacity'),
+            shadowOpacityValue: document.getElementById('shadow-opacity-value'),
+            shadowX: document.getElementById('shadow-x'),
+            shadowXValue: document.getElementById('shadow-x-value'),
+            shadowY: document.getElementById('shadow-y'),
+            shadowYValue: document.getElementById('shadow-y-value'),
+            shadowColor: document.getElementById('shadow-color'),
+            shadowColorText: document.getElementById('shadow-color-text'),
+
+            // Redaction
+            redactType: document.getElementById('redact-type'),
+            redactIntensity: document.getElementById('redact-intensity'),
+            redactIntensityValue: document.getElementById('redact-intensity-value'),
+            clearRedactionsBtn: document.getElementById('clear-redactions-btn'),
+
+            // Spotlight
+            spotlightEnabled: document.getElementById('spotlight-enabled'),
+            spotlightControls: document.getElementById('spotlight-controls'),
+            spotlightOpacity: document.getElementById('spotlight-opacity'),
+            spotlightOpacityValue: document.getElementById('spotlight-opacity-value'),
+
+            // Canvas settings
+            canvasWidth: document.getElementById('canvas-width'),
+            canvasHeight: document.getElementById('canvas-height'),
+
+            // Text overlay controls
+            addTextBtn: document.getElementById('add-text-btn'),
+            textControls: document.getElementById('text-controls'),
+            textContent: document.getElementById('text-content'),
+            textSize: document.getElementById('text-size'),
+            textSizeValue: document.getElementById('text-size-value'),
+            textFont: document.getElementById('text-font'),
+            textColor: document.getElementById('text-color'),
+            textColorText: document.getElementById('text-color-text'),
+            textBold: document.getElementById('text-bold'),
+            textItalic: document.getElementById('text-italic'),
+            removeTextBtn: document.getElementById('remove-text-btn'),
+
+            // Watermark controls
+            watermarkEnabled: document.getElementById('watermark-enabled'),
+            watermarkControls: document.getElementById('watermark-controls'),
+            watermarkText: document.getElementById('watermark-text'),
+            watermarkPosition: document.getElementById('watermark-position'),
+            watermarkSize: document.getElementById('watermark-size'),
+            watermarkSizeValue: document.getElementById('watermark-size-value'),
+            watermarkOpacity: document.getElementById('watermark-opacity'),
+            watermarkOpacityValue: document.getElementById('watermark-opacity-value'),
+            watermarkColor: document.getElementById('watermark-color'),
+            watermarkColorText: document.getElementById('watermark-color-text'),
+
+            // Export controls
+            exportFormat: document.getElementById('export-format'),
+            qualityControls: document.getElementById('quality-controls'),
+            exportQuality: document.getElementById('export-quality'),
+            exportQualityValue: document.getElementById('export-quality-value'),
+            copyClipboardBtn: document.getElementById('copy-clipboard-btn'),
+            exportHtmlBtn: document.getElementById('export-html-btn'),
+
+            // Template controls
+            templateName: document.getElementById('template-name'),
+            saveTemplateBtn: document.getElementById('save-template-btn'),
+            clearTemplatesBtn: document.getElementById('clear-templates-btn'),
+            templateList: document.getElementById('template-list'),
+            loadTemplateBtn: document.getElementById('load-template-btn'),
+            templateInfo: document.getElementById('template-info')
+        };
+
+        const ctx = elements.canvas.getContext('2d');
+
+        // ==================== CANVAS COORD HELPER ====================
+        function getCanvasCoords(e) {
+            const rect = elements.canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left) * (elements.canvas.width / rect.width),
+                y: (e.clientY - rect.top) * (elements.canvas.height / rect.height)
+            };
+        }
+
+        // ==================== DRAWING STATE ====================
+        let drawing = { active: false, startX: 0, startY: 0 };
+        let dragOffset = { dx: 0, dy: 0 };
+        let isDraggingAnnotation = false;
+
+        // ==================== PRESETS ====================
+        const gradientPresets = {
+            sunset: { colors: ['#667eea', '#764ba2'], positions: [0, 100], angle: 135 },
+            ocean: { colors: ['#2E3192', '#1BFFFF'], positions: [0, 100], angle: 135 },
+            forest: { colors: ['#134E5E', '#71B280'], positions: [0, 100], angle: 135 },
+            fire: { colors: ['#F2994A', '#F2C94C'], positions: [0, 100], angle: 135 },
+            midnight: { colors: ['#0F2027', '#2C5364'], positions: [0, 100], angle: 135 },
+            rose: { colors: ['#ED4264', '#FFEDBC'], positions: [0, 100], angle: 135 },
+            purple: { colors: ['#A8EDEA', '#FED6E3'], positions: [0, 100], angle: 135 },
+            mint: { colors: ['#84fab0', '#8fd3f4'], positions: [0, 100], angle: 135 }
+        };
+
+        const shadowPresets = {
+            soft: { blur: 40, spread: 10, opacity: 30, x: 0, y: 10 },
+            medium: { blur: 60, spread: 20, opacity: 40, x: 0, y: 20 },
+            hard: { blur: 80, spread: 30, opacity: 50, x: 0, y: 30 },
+            none: { blur: 0, spread: 0, opacity: 0, x: 0, y: 0 }
+        };
+
+        const sizePresets = {
+            twitter: { width: 1200, height: 675 },
+            instagram: { width: 1080, height: 1080 },
+            facebook: { width: 1200, height: 630 },
+            linkedin: { width: 1200, height: 627 }
+        };
+
+        const FRAME_INSETS = {
+            iphone:  { top: 60, bottom: 40, left: 24, right: 24 },
+            chrome:  { top: 90, bottom: 0,  left: 0,  right: 0 },
+            safari:  { top: 80, bottom: 0,  left: 0,  right: 0 },
+            firefox: { top: 90, bottom: 0,  left: 0,  right: 0 },
+            macos:   { top: 40, bottom: 0,  left: 0,  right: 0 },
+            windows: { top: 40, bottom: 0,  left: 0,  right: 0 }
+        };
+
+        function getFrameInsets() {
+            const t = state.deviceFrame.type;
+            if (!t || !FRAME_INSETS[t]) return { top: 0, bottom: 0, left: 0, right: 0 };
+            return FRAME_INSETS[t];
+        }
+
+        // ==================== RENDER ====================
+        function render(forExport) {
+            if (!state.image) return;
+
+            const canvas = elements.canvas;
+            canvas.width = state.canvas.width;
+            canvas.height = state.canvas.height;
+
+            // 1. Draw background
+            drawBackground(forExport);
+
+            // Calculate image dimensions
+            const scaleFactor = state.scale / 100;
+            const padding = state.padding * 2;
+            const frameInsets = getFrameInsets();
+            const titleBarHeight = frameInsets.top;
+            const bottomPad = frameInsets.bottom;
+            const sidePad = frameInsets.left;
+
+            const availableWidth = canvas.width - padding - sidePad * 2;
+            const availableHeight = canvas.height - padding - titleBarHeight - bottomPad;
+
+            let imgWidth = state.image.width * scaleFactor;
+            let imgHeight = state.image.height * scaleFactor;
+
+            if (imgWidth <= 0 || imgHeight <= 0 || availableWidth <= 0 || availableHeight <= 0) return;
+
+            const imgRatio = imgWidth / imgHeight;
+            const availableRatio = availableWidth / availableHeight;
+
+            if (imgRatio > availableRatio) {
+                if (imgWidth > availableWidth) { imgWidth = availableWidth; imgHeight = imgWidth / imgRatio; }
+            } else {
+                if (imgHeight > availableHeight) { imgHeight = availableHeight; imgWidth = imgHeight * imgRatio; }
+            }
+
+            const x = (canvas.width - imgWidth) / 2;
+            const y = (canvas.height - imgHeight - titleBarHeight - bottomPad) / 2 + titleBarHeight;
+
+            // 2. Draw shadow
+            if (state.shadow.opacity > 0) drawShadow(x, y, imgWidth, imgHeight);
+
+            // 3. Draw image
+            ctx.save();
+            const radius = state.borderRadius;
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + imgWidth - radius, y);
+            ctx.quadraticCurveTo(x + imgWidth, y, x + imgWidth, y + radius);
+            ctx.lineTo(x + imgWidth, y + imgHeight - radius);
+            ctx.quadraticCurveTo(x + imgWidth, y + imgHeight, x + imgWidth - radius, y + imgHeight);
+            ctx.lineTo(x + radius, y + imgHeight);
+            ctx.quadraticCurveTo(x, y + imgHeight, x, y + imgHeight - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            ctx.clip();
+
+            const centerX = x + imgWidth / 2;
+            const centerY = y + imgHeight / 2;
+            ctx.translate(centerX, centerY);
+            if (state.imageTransform.rotation !== 0) ctx.rotate((state.imageTransform.rotation * Math.PI) / 180);
+            ctx.scale(state.imageTransform.flipH ? -1 : 1, state.imageTransform.flipV ? -1 : 1);
+
+            const filters = [];
+            if (state.imageFilters.brightness !== 100) filters.push(`brightness(${state.imageFilters.brightness}%)`);
+            if (state.imageFilters.contrast !== 100) filters.push(`contrast(${state.imageFilters.contrast}%)`);
+            if (state.imageFilters.saturation !== 100) filters.push(`saturate(${state.imageFilters.saturation}%)`);
+            if (state.imageFilters.blur > 0) filters.push(`blur(${state.imageFilters.blur}px)`);
+            if (state.imageFilters.grayscale > 0) filters.push(`grayscale(${state.imageFilters.grayscale}%)`);
+            if (state.imageFilters.sepia > 0) filters.push(`sepia(${state.imageFilters.sepia}%)`);
+            if (filters.length > 0) ctx.filter = filters.join(' ');
+
+            let drawWidth = imgWidth, drawHeight = imgHeight;
+            if (state.imageTransform.rotation === 90 || state.imageTransform.rotation === 270) {
+                drawWidth = imgHeight; drawHeight = imgWidth;
+            }
+            ctx.drawImage(state.image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+            ctx.restore();
+
+            // 4. Draw border
+            if (state.showBorder) drawBorder(x, y, imgWidth, imgHeight);
+
+            // 5. Draw device frame
+            if (state.deviceFrame.type) {
+                drawDeviceFrame(x, y - titleBarHeight, imgWidth, imgHeight + titleBarHeight + bottomPad);
+            }
+
+            // 6. Draw redactions (after image)
+            drawRedactions();
+
+            // 7. Draw spotlight (after redactions)
+            drawSpotlight();
+
+            // 8. Draw annotations (after spotlight)
+            drawAnnotations();
+
+            // 9. Draw text overlay
+            drawTextOverlay();
+
+            // 10. Draw watermark
+            drawWatermark();
+        }
+
+        // ==================== BACKGROUND ====================
+        function drawBackground(forExport) {
+            const canvas = elements.canvas;
+            if (state.bgMode === 'transparent') {
+                if (forExport) {
+                    // Leave transparent for export
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    // Checkerboard preview
+                    const size = 20;
+                    for (let px = 0; px < canvas.width; px += size) {
+                        for (let py = 0; py < canvas.height; py += size) {
+                            ctx.fillStyle = ((px/size + py/size) % 2 === 0) ? '#888888' : '#aaaaaa';
+                            ctx.fillRect(px, py, size, size);
+                        }
+                    }
+                }
+            } else if (state.bgMode === 'solid') {
+                ctx.fillStyle = state.bgColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else {
+                drawGradient();
+            }
+        }
+
+        function drawGradient() {
+            const canvas = elements.canvas;
+            let gradient;
+            if (state.gradient.type === 'linear') {
+                const angle = state.gradient.angle * Math.PI / 180;
+                const x1 = canvas.width / 2 + Math.cos(angle) * canvas.width;
+                const y1 = canvas.height / 2 + Math.sin(angle) * canvas.height;
+                const x2 = canvas.width / 2 - Math.cos(angle) * canvas.width;
+                const y2 = canvas.height / 2 - Math.sin(angle) * canvas.height;
+                gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+            } else {
+                const cx = canvas.width / 2, cy = canvas.height / 2;
+                const r = Math.max(canvas.width, canvas.height) / 2;
+                gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+            }
+            gradient.addColorStop(state.gradient.positions[0] / 100, state.gradient.colors[0]);
+            gradient.addColorStop(state.gradient.positions[1] / 100, state.gradient.colors[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawShadow(x, y, width, height) {
+            const shadowCanvas = document.createElement('canvas');
+            shadowCanvas.width = elements.canvas.width;
+            shadowCanvas.height = elements.canvas.height;
+            const shadowCtx = shadowCanvas.getContext('2d');
+
+            const shadowColor = state.shadow.color;
+            const opacity = state.shadow.opacity / 100;
+            const hexMatch = shadowColor.match(/^#([0-9A-Fa-f]{6})$/);
+            if (!hexMatch) {
+                shadowCtx.shadowColor = `rgba(0,0,0,${opacity})`;
+            } else {
+                const r = parseInt(shadowColor.slice(1,3),16);
+                const g = parseInt(shadowColor.slice(3,5),16);
+                const b = parseInt(shadowColor.slice(5,7),16);
+                shadowCtx.shadowColor = `rgba(${r},${g},${b},${opacity})`;
+            }
+            shadowCtx.shadowBlur = state.shadow.blur;
+            shadowCtx.shadowOffsetX = state.shadow.x;
+            shadowCtx.shadowOffsetY = state.shadow.y;
+
+            const rad = state.borderRadius;
+            const spread = state.shadow.spread;
+            const sx = x - spread, sy = y - spread;
+            const sw = width + spread * 2, sh = height + spread * 2;
+
+            shadowCtx.fillStyle = 'black';
+            shadowCtx.beginPath();
+            shadowCtx.moveTo(sx + rad, sy);
+            shadowCtx.lineTo(sx + sw - rad, sy);
+            shadowCtx.quadraticCurveTo(sx + sw, sy, sx + sw, sy + rad);
+            shadowCtx.lineTo(sx + sw, sy + sh - rad);
+            shadowCtx.quadraticCurveTo(sx + sw, sy + sh, sx + sw - rad, sy + sh);
+            shadowCtx.lineTo(sx + rad, sy + sh);
+            shadowCtx.quadraticCurveTo(sx, sy + sh, sx, sy + sh - rad);
+            shadowCtx.lineTo(sx, sy + rad);
+            shadowCtx.quadraticCurveTo(sx, sy, sx + rad, sy);
+            shadowCtx.closePath();
+            shadowCtx.fill();
+            ctx.drawImage(shadowCanvas, 0, 0);
+        }
+
+        function drawBorder(x, y, width, height) {
+            ctx.strokeStyle = state.borderColor;
+            ctx.lineWidth = state.borderWidth;
+            const rad = state.borderRadius;
+            const offset = state.borderWidth / 2;
+            ctx.beginPath();
+            ctx.moveTo(x + rad, y + offset);
+            ctx.lineTo(x + width - rad, y + offset);
+            ctx.quadraticCurveTo(x + width - offset, y + offset, x + width - offset, y + rad);
+            ctx.lineTo(x + width - offset, y + height - rad);
+            ctx.quadraticCurveTo(x + width - offset, y + height - offset, x + width - rad, y + height - offset);
+            ctx.lineTo(x + rad, y + height - offset);
+            ctx.quadraticCurveTo(x + offset, y + height - offset, x + offset, y + height - rad);
+            ctx.lineTo(x + offset, y + rad);
+            ctx.quadraticCurveTo(x + offset, y + offset, x + rad, y + offset);
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        // ==================== DEVICE FRAME ====================
+        function drawDeviceFrame(x, y, width, height) {
+            const t = state.deviceFrame.type;
+            if (!t) return;
+            if (t === 'macos') drawMacOSWindow(x, y, width, height);
+            else if (t === 'windows') drawWindowsWindow(x, y, width, height);
+            else if (t === 'iphone') drawIphoneFrame(x, y, width, height);
+            else if (t === 'chrome') drawBrowserFrame(x, y, width, height, 'chrome');
+            else if (t === 'safari') drawBrowserFrame(x, y, width, height, 'safari');
+            else if (t === 'firefox') drawBrowserFrame(x, y, width, height, 'firefox');
+        }
+
+        function drawMacOSWindow(x, y, width, height) {
+            const titleBarHeight = FRAME_INSETS.macos.top;
+            const isDark = state.deviceFrame.color === 'dark';
+            const rad = state.borderRadius;
+            ctx.save();
+
+            const barColor = isDark ? '#2d2d2d' : '#ececec';
+            const barColor2 = isDark ? '#1e1e1e' : '#d6d6d6';
+            const titleBarGradient = ctx.createLinearGradient(x, y, x, y + titleBarHeight);
+            titleBarGradient.addColorStop(0, barColor);
+            titleBarGradient.addColorStop(1, barColor2);
+            ctx.fillStyle = titleBarGradient;
+
+            ctx.beginPath();
+            ctx.moveTo(x + rad, y);
+            ctx.lineTo(x + width - rad, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + rad);
+            ctx.lineTo(x + width, y + titleBarHeight);
+            ctx.lineTo(x, y + titleBarHeight);
+            ctx.lineTo(x, y + rad);
+            ctx.quadraticCurveTo(x, y, x + rad, y);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y + titleBarHeight);
+            ctx.lineTo(x + width, y + titleBarHeight);
+            ctx.stroke();
+
+            // Traffic lights
+            const bY = y + titleBarHeight / 2;
+            const bSpacing = 20, bRad = 6, startX = x + 12;
+            [['#ff5f57','#e04038'],['#ffbd2e','#dea123'],['#28ca42','#1fa935']].forEach(([fill,stroke],i) => {
+                ctx.fillStyle = fill;
+                ctx.beginPath();
+                ctx.arc(startX + bSpacing * i, bY, bRad, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            });
+
+            // Title
+            const titleText = state.deviceFrame.title || 'Screenshot';
+            ctx.fillStyle = isDark ? '#cccccc' : '#333333';
+            ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(titleText, x + width / 2, y + titleBarHeight / 2);
+
+            ctx.restore();
+        }
+
+        function drawWindowsWindow(x, y, width, height) {
+            const titleBarHeight = FRAME_INSETS.windows.top;
+            const isDark = state.deviceFrame.color === 'dark';
+            const rad = state.borderRadius;
+            ctx.save();
+
+            ctx.fillStyle = isDark ? '#202020' : '#f0f0f0';
+            ctx.beginPath();
+            ctx.moveTo(x + rad, y);
+            ctx.lineTo(x + width - rad, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + rad);
+            ctx.lineTo(x + width, y + titleBarHeight);
+            ctx.lineTo(x, y + titleBarHeight);
+            ctx.lineTo(x, y + rad);
+            ctx.quadraticCurveTo(x, y, x + rad, y);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y + titleBarHeight);
+            ctx.lineTo(x + width, y + titleBarHeight);
+            ctx.stroke();
+
+            // App icon area
+            ctx.fillStyle = isDark ? '#888' : '#555';
+            ctx.fillRect(x + 8, y + titleBarHeight/2 - 8, 16, 16);
+
+            // Title
+            const titleText = state.deviceFrame.title || 'Screenshot';
+            ctx.fillStyle = isDark ? '#cccccc' : '#202020';
+            ctx.font = '13px "Segoe UI", Arial, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(titleText, x + 32, y + titleBarHeight / 2);
+
+            // Windows controls (min/max/close)
+            const btnW = 46, btnH = titleBarHeight;
+            ['–', '□', '✕'].forEach((ch, i) => {
+                const bx = x + width - btnW * (3-i);
+                if (i === 2) { // close
+                    ctx.fillStyle = 'rgba(0,0,0,0)';
+                } else {
+                    ctx.fillStyle = 'rgba(0,0,0,0)';
+                }
+                ctx.fillStyle = isDark ? '#444' : '#ccc';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(ch, bx + btnW/2, y + btnH/2);
+            });
+
+            ctx.restore();
+        }
+
+        function drawIphoneFrame(x, y, width, height) {
+            const isDark = state.deviceFrame.color === 'dark';
+            const bodyColor = isDark ? '#1c1c1e' : '#f5f5f7';
+            const bodyStroke = isDark ? '#3a3a3c' : '#d1d1d6';
+            const screenBg = isDark ? '#000000' : '#ffffff';
+            const rad = 50;
+            const insets = FRAME_INSETS.iphone;
+
+            ctx.save();
+
+            // Phone body
+            ctx.fillStyle = bodyColor;
+            ctx.strokeStyle = bodyStroke;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x + rad, y);
+            ctx.lineTo(x + width - rad, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + rad);
+            ctx.lineTo(x + width, y + height - rad);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - rad, y + height);
+            ctx.lineTo(x + rad, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - rad);
+            ctx.lineTo(x, y + rad);
+            ctx.quadraticCurveTo(x, y, x + rad, y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Screen area
+            const sX = x + insets.left, sY = y + insets.top;
+            const sW = width - insets.left - insets.right;
+            const sH = height - insets.top - insets.bottom;
+            ctx.fillStyle = screenBg;
+            ctx.fillRect(sX, sY, sW, sH);
+
+            // Dynamic Island
+            const diW = Math.min(sW * 0.35, 120), diH = 28;
+            const diX = sX + sW/2 - diW/2, diY = sY + 6;
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.roundRect(diX, diY, diW, diH, diH/2);
+            ctx.fill();
+
+            // Status bar text
+            ctx.fillStyle = isDark ? '#ffffff' : '#000000';
+            ctx.font = 'bold 14px -apple-system, Arial, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('9:41', sX + 10, sY + 8);
+
+            // Battery icon
+            ctx.strokeStyle = isDark ? '#ffffff' : '#000000';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(sX + sW - 32, sY + 10, 22, 12);
+            ctx.fillStyle = isDark ? '#ffffff' : '#000000';
+            ctx.fillRect(sX + sW - 30, sY + 12, 16, 8);
+            ctx.fillRect(sX + sW - 10, sY + 13, 2, 6);
+
+            // Home indicator
+            const hiW = Math.min(sW * 0.3, 100), hiH = 5;
+            const hiX = sX + sW/2 - hiW/2, hiY = sY + sH - 16;
+            ctx.fillStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.25)';
+            ctx.beginPath();
+            ctx.roundRect(hiX, hiY, hiW, hiH, hiH/2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawBrowserFrame(x, y, width, height, browser) {
+            const insets = FRAME_INSETS[browser];
+            const isDark = state.deviceFrame.color === 'dark';
+            const totalTop = insets.top;
+            const rad = state.borderRadius;
+
+            ctx.save();
+
+            // Frame background
+            const bgColor = isDark ? '#292929' : '#dee1e6';
+            ctx.fillStyle = bgColor;
+            ctx.beginPath();
+            ctx.moveTo(x + rad, y);
+            ctx.lineTo(x + width - rad, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + rad);
+            ctx.lineTo(x + width, y + totalTop);
+            ctx.lineTo(x, y + totalTop);
+            ctx.lineTo(x, y + rad);
+            ctx.quadraticCurveTo(x, y, x + rad, y);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y + totalTop);
+            ctx.lineTo(x + width, y + totalTop);
+            ctx.stroke();
+
+            const tabH = 36, toolH = totalTop - tabH;
+
+            // Tab area (top portion)
+            ctx.fillStyle = isDark ? '#1e1e1e' : '#c4c7cc';
+            ctx.fillRect(x, y, width, tabH);
+
+            // Single tab
+            const tabW = Math.min(200, width * 0.25);
+            ctx.fillStyle = isDark ? '#292929' : '#dee1e6';
+            ctx.beginPath();
+            ctx.moveTo(x + 4, y + tabH);
+            ctx.lineTo(x + 12, y + 4);
+            ctx.lineTo(x + tabW - 4, y + 4);
+            ctx.lineTo(x + tabW + 4, y + tabH);
+            ctx.closePath();
+            ctx.fill();
+
+            // Tab favicon + title
+            ctx.fillStyle = isDark ? '#ccc' : '#333';
+            ctx.font = '12px Arial, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            const tabTitle = (state.deviceFrame.url || 'https://example.com').replace(/^https?:\/\//, '').split('/')[0];
+            ctx.fillText(tabTitle.substring(0, 20), x + 20, y + tabH/2);
+
+            // Toolbar area
+            const toolY = y + tabH;
+
+            // Nav buttons
+            ctx.fillStyle = isDark ? '#aaa' : '#555';
+            ctx.font = '16px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('←', x + 18, toolY + toolH/2);
+            ctx.fillText('→', x + 38, toolY + toolH/2);
+            ctx.fillText('↺', x + 58, toolY + toolH/2);
+
+            // Address bar
+            const addrX = x + 70, addrY = toolY + (toolH - 28)/2;
+            const addrW = width - 80;
+            ctx.fillStyle = isDark ? '#3a3a3c' : '#ffffff';
+            ctx.strokeStyle = isDark ? '#555' : '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(addrX, addrY, addrW, 28, 14);
+            ctx.fill();
+            ctx.stroke();
+
+            // Browser-specific icon
+            let icon = '🔒';
+            if (browser === 'firefox') icon = '🦊';
+            else if (browser === 'safari') icon = '🧭';
+
+            ctx.font = '13px Arial, sans-serif';
+            ctx.fillStyle = isDark ? '#888' : '#555';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(icon + ' ' + (state.deviceFrame.url || 'https://example.com'), addrX + 8, addrY + 14);
+
+            ctx.restore();
+        }
+
+        // ==================== REDACTIONS ====================
+        function drawRedactions() {
+            if (!state.redactions || state.redactions.length === 0) return;
+            state.redactions.forEach((r, idx) => {
+                ctx.save();
+                if (r.type === 'blur') {
+                    ctx.filter = `blur(${r.intensity}px)`;
+                    ctx.drawImage(elements.canvas, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
+                    ctx.filter = 'none';
+                    // Apply again for stronger effect
+                    ctx.filter = `blur(${r.intensity}px)`;
+                    ctx.drawImage(elements.canvas, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
+                } else {
+                    // Pixelate
+                    const blockSize = Math.max(4, r.intensity);
+                    const offscreen = document.createElement('canvas');
+                    offscreen.width = Math.max(1, r.w);
+                    offscreen.height = Math.max(1, r.h);
+                    const octx = offscreen.getContext('2d');
+                    const smallW = Math.max(1, Math.floor(r.w / blockSize));
+                    const smallH = Math.max(1, Math.floor(r.h / blockSize));
+                    octx.drawImage(elements.canvas, r.x, r.y, r.w, r.h, 0, 0, smallW, smallH);
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(offscreen, 0, 0, smallW, smallH, r.x, r.y, r.w, r.h);
+                    ctx.imageSmoothingEnabled = true;
+                }
+                // Selection highlight
+                if (state.selectedRedaction === idx) {
+                    ctx.filter = 'none';
+                    ctx.strokeStyle = '#0af';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([6, 3]);
+                    ctx.strokeRect(r.x, r.y, r.w, r.h);
+                    ctx.setLineDash([]);
+                }
+                ctx.restore();
+            });
+        }
+
+        // ==================== SPOTLIGHT ====================
+        function drawSpotlight() {
+            if (!state.spotlight.enabled) return;
+            const cw = elements.canvas.width, ch = elements.canvas.height;
+            const sx = state.spotlight.x * cw, sy = state.spotlight.y * ch;
+            const sw = state.spotlight.w * cw, sh = state.spotlight.h * ch;
+            ctx.save();
+            ctx.fillStyle = `rgba(0,0,0,${state.spotlight.opacity})`;
+            ctx.fillRect(0, 0, cw, ch);
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+            ctx.fillRect(sx, sy, sw, sh);
+            ctx.restore();
+        }
+
+        // ==================== ANNOTATIONS ====================
+        function drawAnnotations() {
+            if (!state.annotations) return;
+            state.annotations.forEach((ann, idx) => {
+                ctx.save();
+                ctx.strokeStyle = ann.color;
+                ctx.fillStyle = ann.color;
+                ctx.lineWidth = ann.strokeWidth;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                const isSelected = state.selectedAnnotation === idx;
+
+                if (ann.type === 'arrow') {
+                    drawArrow(ann.x1, ann.y1, ann.x2, ann.y2, ann.color, ann.strokeWidth);
+                } else if (ann.type === 'rect') {
+                    const rx = Math.min(ann.x1, ann.x2), ry = Math.min(ann.y1, ann.y2);
+                    const rw = Math.abs(ann.x2 - ann.x1), rh = Math.abs(ann.y2 - ann.y1);
+                    ctx.strokeRect(rx, ry, rw, rh);
+                } else if (ann.type === 'circle') {
+                    const cx = (ann.x1 + ann.x2) / 2, cy = (ann.y1 + ann.y2) / 2;
+                    const rx2 = Math.abs(ann.x2 - ann.x1) / 2, ry2 = Math.abs(ann.y2 - ann.y1) / 2;
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, rx2, ry2, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (ann.type === 'number') {
+                    const cx = ann.x1, cy = ann.y1;
+                    const r = ann.strokeWidth * 4 + 8;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = `bold ${Math.max(12, ann.strokeWidth * 3 + 6)}px Arial, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(String(ann.number), cx, cy);
+                }
+
+                // Selection highlight
+                if (isSelected) {
+                    ctx.strokeStyle = 'rgba(0, 160, 255, 0.8)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 3]);
+                    const minX = Math.min(ann.x1, ann.x2) - 6;
+                    const minY = Math.min(ann.y1, ann.y2) - 6;
+                    const maxW = Math.abs(ann.x2 - ann.x1) + 12;
+                    const maxH = Math.abs(ann.y2 - ann.y1) + 12;
+                    ctx.strokeRect(minX, minY, maxW, maxH);
+                    ctx.setLineDash([]);
+                }
+
+                ctx.restore();
+            });
+        }
+
+        function drawArrow(x1, y1, x2, y2, color, strokeWidth) {
+            const headLen = Math.max(16, strokeWidth * 4);
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI/6), y2 - headLen * Math.sin(angle - Math.PI/6));
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI/6), y2 - headLen * Math.sin(angle + Math.PI/6));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function drawPreviewAnnotation(startX, startY, curX, curY) {
+            if (!state.image) return;
+            render(); // redraw clean state
+            ctx.save();
+            ctx.strokeStyle = state.annotationColor;
+            ctx.fillStyle = state.annotationColor;
+            ctx.lineWidth = state.annotationStrokeWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const tool = state.tool;
+            if (tool === 'arrow') {
+                drawArrow(startX, startY, curX, curY, state.annotationColor, state.annotationStrokeWidth);
+            } else if (tool === 'rect') {
+                const rx = Math.min(startX, curX), ry = Math.min(startY, curY);
+                const rw = Math.abs(curX - startX), rh = Math.abs(curY - startY);
+                ctx.strokeRect(rx, ry, rw, rh);
+            } else if (tool === 'circle') {
+                const cx = (startX + curX) / 2, cy = (startY + curY) / 2;
+                const rx2 = Math.abs(curX - startX) / 2, ry2 = Math.abs(curY - startY) / 2;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, rx2, ry2, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (tool === 'redact') {
+                const rx = Math.min(startX, curX), ry = Math.min(startY, curY);
+                const rw = Math.abs(curX - startX), rh = Math.abs(curY - startY);
+                ctx.strokeStyle = '#ff6600';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.strokeRect(rx, ry, rw, rh);
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(255,102,0,0.2)';
+                ctx.fillRect(rx, ry, rw, rh);
+            } else if (tool === 'spotlight') {
+                const cw = elements.canvas.width, ch = elements.canvas.height;
+                const rx = Math.min(startX, curX), ry = Math.min(startY, curY);
+                const rw = Math.abs(curX - startX), rh = Math.abs(curY - startY);
+                ctx.fillStyle = `rgba(0,0,0,${state.spotlight.opacity})`;
+                ctx.fillRect(0, 0, cw, ch);
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.fillStyle = 'rgba(0,0,0,1)';
+                ctx.fillRect(rx, ry, rw, rh);
+            }
+            ctx.restore();
+        }
+
+        // ==================== TEXT OVERLAY ====================
+        function drawTextOverlay() {
+            if (!state.textOverlay.enabled || !state.textOverlay.content) return;
+            ctx.save();
+            let fontStyle = '';
+            if (state.textOverlay.italic) fontStyle += 'italic ';
+            if (state.textOverlay.bold) fontStyle += 'bold ';
+            ctx.font = `${fontStyle}${state.textOverlay.size}px ${state.textOverlay.font}`;
+            ctx.fillStyle = state.textOverlay.color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const tx = elements.canvas.width * state.textOverlay.x;
+            const ty = elements.canvas.height * state.textOverlay.y;
+            ctx.fillText(state.textOverlay.content, tx, ty);
+            ctx.restore();
+        }
+
+        // ==================== WATERMARK ====================
+        function drawWatermark() {
+            if (!state.watermark.enabled || !state.watermark.text) return;
+            ctx.save();
+            ctx.font = `${state.watermark.size}px Arial`;
+            ctx.fillStyle = state.watermark.color;
+            ctx.globalAlpha = state.watermark.opacity / 100;
+            const padding = 20;
+            let wx, wy;
+            switch (state.watermark.position) {
+                case 'bottom-right': ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; wx = elements.canvas.width - padding; wy = elements.canvas.height - padding; break;
+                case 'bottom-left': ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; wx = padding; wy = elements.canvas.height - padding; break;
+                case 'top-right': ctx.textAlign = 'right'; ctx.textBaseline = 'top'; wx = elements.canvas.width - padding; wy = padding; break;
+                case 'top-left': ctx.textAlign = 'left'; ctx.textBaseline = 'top'; wx = padding; wy = padding; break;
+                case 'center': ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; wx = elements.canvas.width / 2; wy = elements.canvas.height / 2; break;
+            }
+            ctx.fillText(state.watermark.text, wx, wy);
+            ctx.restore();
+        }
+
+        // ==================== EXPORT ====================
+        function exportImage() {
+            if (!state.image) { showNotification('Please load an image first!', 'error'); return; }
+            let mimeType, extension;
+            const quality = state.exportSettings.quality / 100;
+            switch (state.exportSettings.format) {
+                case 'jpeg': mimeType = 'image/jpeg'; extension = 'jpg'; break;
+                case 'webp': mimeType = 'image/webp'; extension = 'webp'; break;
+                default: mimeType = 'image/png'; extension = 'png'; break;
+            }
+            // For transparent bg PNG export, render without checkerboard
+            if (state.bgMode === 'transparent' && mimeType === 'image/png') {
+                render(true);
+            }
+            const blobCallback = (blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `screenshot-${Date.now()}.${extension}`;
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a); URL.revokeObjectURL(url);
+                showNotification(`Image exported as ${extension.toUpperCase()}!`, 'success');
+                if (state.bgMode === 'transparent') render(); // re-render with preview
+            };
+            if (mimeType === 'image/png') elements.canvas.toBlob(blobCallback, mimeType);
+            else elements.canvas.toBlob(blobCallback, mimeType, quality);
+        }
+
+        function copyToClipboard() {
+            if (!state.image) { showNotification('Please load an image first!', 'error'); return; }
+            elements.canvas.toBlob((blob) => {
+                const item = new ClipboardItem({ 'image/png': blob });
+                navigator.clipboard.write([item]).then(() => {
+                    showNotification('Image copied to clipboard!', 'success');
+                }).catch((err) => {
+                    showNotification('Failed to copy: ' + err.message, 'error');
+                });
+            }, 'image/png');
+        }
+
+        function exportAsHTML() {
+            if (!state.image) { showNotification('Please load an image first!', 'error'); return; }
+            const dataURL = elements.canvas.toDataURL('image/png');
+            const title = state.watermark.text || 'SnapShot-Pro';
+            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#111;font-family:sans-serif;}img{max-width:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.8);}</style></head><body><img src="${dataURL}"></body></html>`;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `snapshot-${Date.now()}.html`;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+            showNotification('Exported as HTML card!', 'success');
+        }
+
+        // ==================== ANNOTATION HIT TEST ====================
+        function hitTestAnnotations(x, y) {
+            if (!state.annotations) return -1;
+            for (let i = state.annotations.length - 1; i >= 0; i--) {
+                const ann = state.annotations[i];
+                const minX = Math.min(ann.x1, ann.x2) - 10;
+                const maxX = Math.max(ann.x1, ann.x2) + 10;
+                const minY = Math.min(ann.y1, ann.y2) - 10;
+                const maxY = Math.max(ann.y1, ann.y2) + 10;
+                if (x >= minX && x <= maxX && y >= minY && y <= maxY) return i;
+            }
+            return -1;
+        }
+
+        function hitTestRedactions(x, y) {
+            if (!state.redactions) return -1;
+            for (let i = state.redactions.length - 1; i >= 0; i--) {
+                const r = state.redactions[i];
+                if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return i;
+            }
+            return -1;
+        }
+
+        function deleteSelected() {
+            if (state.selectedAnnotation !== null && state.annotations && state.annotations[state.selectedAnnotation]) {
+                saveStateToHistory();
+                state.annotations.splice(state.selectedAnnotation, 1);
+                state.selectedAnnotation = null;
+                render();
+            } else if (state.selectedRedaction !== null && state.redactions && state.redactions[state.selectedRedaction]) {
+                saveStateToHistory();
+                state.redactions.splice(state.selectedRedaction, 1);
+                state.selectedRedaction = null;
+                render();
+            }
+        }
+
+        // ==================== TOOLBAR ====================
+        function updateToolbar() {
+            document.querySelectorAll('.ann-tool-btn[data-tool]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tool === state.tool);
+            });
+            elements.canvas.dataset.tool = state.tool;
+        }
+
+        // ==================== THEME ====================
+        function applyTheme(theme) {
+            state.theme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            elements.themeToggleBtn.textContent = theme === 'dark' ? '🌙' : '☀️';
+            try { localStorage.setItem('snapshotpro_theme', theme); } catch(e) {}
+        }
+
+        function toggleShortcutsOverlay() {
+            const overlay = elements.shortcutsOverlay;
+            overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        // ==================== GRADIENT / SHADOW PRESETS ====================
+        function applyGradientPreset(presetName) {
+            const preset = gradientPresets[presetName];
+            if (!preset) return;
+            saveStateToHistory();
+            state.gradient.colors = [...preset.colors];
+            state.gradient.positions = [...preset.positions];
+            state.gradient.angle = preset.angle;
+            elements.gradientColor1.value = preset.colors[0];
+            elements.gradientColor2.value = preset.colors[1];
+            elements.gradientPos1.value = preset.positions[0];
+            elements.gradientPos2.value = preset.positions[1];
+            elements.gradientAngle.value = preset.angle;
+            elements.gradientPos1Value.textContent = `${preset.positions[0]}%`;
+            elements.gradientPos2Value.textContent = `${preset.positions[1]}%`;
+            elements.gradientAngleValue.textContent = `${preset.angle}°`;
+            updateAngleIndicator();
+            updateGradientPreview();
+            render();
+        }
+
+        function updateGradientPreview() {
+            const { type, angle, colors, positions } = state.gradient;
+            let g;
+            if (type === 'linear') g = `linear-gradient(${angle}deg, ${colors[0]} ${positions[0]}%, ${colors[1]} ${positions[1]}%)`;
+            else g = `radial-gradient(circle, ${colors[0]} ${positions[0]}%, ${colors[1]} ${positions[1]}%)`;
+            elements.gradientPreview.style.background = g;
+        }
+
+        function updateAngleIndicator() {
+            elements.angleIndicator.style.transform = `translate(-50%, -100%) rotate(${state.gradient.angle}deg)`;
+        }
+
+        function applyShadowPreset(presetName) {
+            const preset = shadowPresets[presetName];
+            if (!preset) return;
+            saveStateToHistory();
+            Object.assign(state.shadow, preset);
+            elements.shadowBlur.value = preset.blur;
+            elements.shadowSpread.value = preset.spread;
+            elements.shadowOpacity.value = preset.opacity;
+            elements.shadowX.value = preset.x;
+            elements.shadowY.value = preset.y;
+            elements.shadowBlurValue.textContent = `${preset.blur}px`;
+            elements.shadowSpreadValue.textContent = `${preset.spread}px`;
+            elements.shadowOpacityValue.textContent = `${preset.opacity}%`;
+            elements.shadowXValue.textContent = `${preset.x}px`;
+            elements.shadowYValue.textContent = `${preset.y}px`;
+            render();
+        }
+
+        function applySizePreset(presetName) {
+            const preset = sizePresets[presetName];
+            if (!preset) return;
+            saveStateToHistory();
+            state.canvas.width = preset.width;
+            state.canvas.height = preset.height;
+            elements.canvasWidth.value = preset.width;
+            elements.canvasHeight.value = preset.height;
+            render();
+        }
+
+        // ==================== FILE HANDLING ====================
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) loadImage(file);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); e.stopPropagation();
+            elements.uploadZone.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault(); e.stopPropagation();
+            elements.uploadZone.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault(); e.stopPropagation();
+            elements.uploadZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) loadImage(file);
+        }
+
+        function handlePaste(e) {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    loadImage(file);
+                    break;
+                }
+            }
+        }
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.image = img;
+                    state.svgCode = null;
+                    elements.uploadZone.style.display = 'none';
+                    elements.canvasWrapper.style.display = 'block';
+                    elements.annotationToolbar.style.display = 'flex';
+                    saveStateToHistory();
+                    render();
+                    showNotification('Image loaded successfully!', 'success');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function toggleSvgInput() {
+            const isVisible = elements.svgInputContainer.style.display !== 'none';
+            elements.svgInputContainer.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function renderSvgCode() {
+            const svgCode = elements.svgCodeInput.value.trim();
+            if (!svgCode) { showNotification('Please enter SVG code', 'error'); return; }
+            let url = null;
+            try {
+                const blob = new Blob([svgCode], { type: 'image/svg+xml' });
+                url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    state.image = img;
+                    state.svgCode = svgCode;
+                    elements.uploadZone.style.display = 'none';
+                    elements.canvasWrapper.style.display = 'block';
+                    elements.annotationToolbar.style.display = 'flex';
+                    elements.svgInputContainer.style.display = 'none';
+                    saveStateToHistory();
+                    render();
+                    showNotification('SVG rendered successfully!', 'success');
+                    if (url) URL.revokeObjectURL(url);
+                };
+                img.onerror = () => { showNotification('Invalid SVG code', 'error'); if (url) URL.revokeObjectURL(url); };
+                img.src = url;
+            } catch (error) {
+                if (url) URL.revokeObjectURL(url);
+                showNotification('Error rendering SVG: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== TEMPLATES ====================
+        function saveTemplate() {
+            const templateName = elements.templateName.value.trim();
+            if (!templateName) { showNotification('Please enter a template name!', 'error'); return; }
+            let templates = {};
+            try { const saved = localStorage.getItem('snapshotpro_templates'); if (saved) templates = JSON.parse(saved); } catch(e) {}
+            templates[templateName] = {
+                imageTransform: state.imageTransform, imageFilters: state.imageFilters,
+                textOverlay: state.textOverlay, windowOverlay: state.windowOverlay,
+                watermark: state.watermark, gradient: state.gradient,
+                padding: state.padding, scale: state.scale, borderRadius: state.borderRadius,
+                showBorder: state.showBorder, borderWidth: state.borderWidth, borderColor: state.borderColor,
+                shadow: state.shadow, canvas: state.canvas, exportSettings: state.exportSettings,
+                bgMode: state.bgMode, bgColor: state.bgColor, deviceFrame: state.deviceFrame,
+                spotlight: state.spotlight, annotationColor: state.annotationColor,
+                annotationStrokeWidth: state.annotationStrokeWidth
+            };
+            try {
+                localStorage.setItem('snapshotpro_templates', JSON.stringify(templates));
+                updateTemplateList();
+                showNotification(`Template "${templateName}" saved!`, 'success');
+                elements.templateName.value = '';
+            } catch(e) { showNotification('Error saving template: ' + e.message, 'error'); }
+        }
+
+        function loadTemplate() {
+            const templateName = elements.templateList.value;
+            if (!templateName) { showNotification('Please select a template!', 'error'); return; }
+            try {
+                const saved = localStorage.getItem('snapshotpro_templates');
+                if (!saved) { showNotification('No templates found!', 'error'); return; }
+                const templates = JSON.parse(saved);
+                const template = templates[templateName];
+                if (!template) { showNotification('Template not found!', 'error'); return; }
+                saveStateToHistory();
+                Object.assign(state, template);
+                updateUIFromState();
+                if (state.image) render();
+                showNotification(`Template "${templateName}" loaded!`, 'success');
+            } catch(e) { showNotification('Error loading template: ' + e.message, 'error'); }
+        }
+
+        function clearTemplates() {
+            if (!confirm('Are you sure you want to delete all templates?')) return;
+            try {
+                localStorage.removeItem('snapshotpro_templates');
+                updateTemplateList();
+                showNotification('All templates cleared!', 'success');
+            } catch(e) { showNotification('Error clearing templates: ' + e.message, 'error'); }
+        }
+
+        function updateTemplateList() {
+            elements.templateList.innerHTML = '<option value="">-- Select Template --</option>';
+            try {
+                const saved = localStorage.getItem('snapshotpro_templates');
+                if (!saved) { elements.templateInfo.textContent = 'No templates saved'; return; }
+                const templates = JSON.parse(saved);
+                const names = Object.keys(templates);
+                if (names.length === 0) { elements.templateInfo.textContent = 'No templates saved'; return; }
+                names.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name; opt.textContent = name;
+                    elements.templateList.appendChild(opt);
+                });
+                elements.templateInfo.textContent = `${names.length} template${names.length > 1 ? 's' : ''} saved`;
+            } catch(e) { elements.templateInfo.textContent = 'Error loading templates'; }
+        }
+
+        // ==================== RESET ====================
+        function resetToDefaults() {
+            state.imageTransform = { rotation: 0, flipH: false, flipV: false };
+            state.imageFilters = { brightness: 100, contrast: 100, saturation: 100, blur: 0, grayscale: 0, sepia: 0 };
+            state.textOverlay = { enabled: false, content: '', size: 48, font: 'Arial', color: '#ffffff', bold: false, italic: false, x: 0.5, y: 0.5 };
+            state.windowOverlay = { enabled: false, style: 'macos', title: 'Screenshot', height: 40, showControls: true };
+            state.watermark = { enabled: false, text: '', position: 'bottom-right', size: 16, opacity: 50, color: '#ffffff' };
+            state.exportSettings = { format: 'png', quality: 92 };
+            state.gradient = { type: 'linear', angle: 135, colors: ['#667eea', '#764ba2'], positions: [0, 100] };
+            state.padding = 60; state.scale = 100; state.borderRadius = 12;
+            state.showBorder = false; state.borderWidth = 2; state.borderColor = '#ffffff';
+            state.shadow = { blur: 40, spread: 10, opacity: 30, x: 0, y: 10, color: '#000000' };
+            state.canvas = { width: 1200, height: 675 };
+            state.bgMode = 'gradient'; state.bgColor = '#1a1a2e';
+            state.deviceFrame = { type: null, color: 'dark', url: 'https://example.com', title: 'Screenshot' };
+            state.annotations = []; state.redactions = [];
+            state.spotlight = { enabled: false, x: 0.2, y: 0.2, w: 0.6, h: 0.6, opacity: 0.65 };
+            state.annotationColor = '#ff3b30'; state.annotationStrokeWidth = 4;
+            state.tool = 'select'; state.selectedAnnotation = null; state.selectedRedaction = null;
+            state.nextNumber = 1; state.redactType = 'pixelate'; state.redactIntensity = 12;
+            updateUIFromState();
+            updateToolbar();
+            document.querySelectorAll('.preset-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.shadow-preset-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.size-preset-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.preset-button[data-preset="sunset"]').classList.add('active');
+            document.querySelector('.shadow-preset-btn[data-shadow="soft"]').classList.add('active');
+            updateAngleIndicator();
+            updateGradientPreview();
+            if (state.image) render();
+            showNotification('Settings reset to defaults!', 'success');
+        }
+
+        // ==================== UPDATE UI FROM STATE ====================
+        function updateUIFromState() {
+            elements.brightness.value = state.imageFilters.brightness;
+            elements.brightnessValue.textContent = `${state.imageFilters.brightness}%`;
+            elements.contrast.value = state.imageFilters.contrast;
+            elements.contrastValue.textContent = `${state.imageFilters.contrast}%`;
+            elements.saturation.value = state.imageFilters.saturation;
+            elements.saturationValue.textContent = `${state.imageFilters.saturation}%`;
+            elements.blur.value = state.imageFilters.blur;
+            elements.blurValue.textContent = `${state.imageFilters.blur}px`;
+            elements.grayscale.value = state.imageFilters.grayscale;
+            elements.grayscaleValue.textContent = `${state.imageFilters.grayscale}%`;
+            elements.sepia.value = state.imageFilters.sepia;
+            elements.sepiaValue.textContent = `${state.imageFilters.sepia}%`;
+
+            elements.gradientType.value = state.gradient.type;
+            elements.gradientAngle.value = state.gradient.angle;
+            elements.gradientAngleValue.textContent = `${state.gradient.angle}°`;
+            elements.gradientColor1.value = state.gradient.colors[0];
+            elements.gradientColor2.value = state.gradient.colors[1];
+            elements.gradientPos1.value = state.gradient.positions[0];
+            elements.gradientPos2.value = state.gradient.positions[1];
+            elements.gradientPos1Value.textContent = `${state.gradient.positions[0]}%`;
+            elements.gradientPos2Value.textContent = `${state.gradient.positions[1]}%`;
+            elements.gradientAngleGroup.style.display = state.gradient.type === 'linear' ? 'block' : 'none';
+
+            elements.padding.value = state.padding;
+            elements.paddingValue.textContent = `${state.padding}px`;
+            elements.scale.value = state.scale;
+            elements.scaleValue.textContent = `${state.scale}%`;
+            elements.borderRadius.value = state.borderRadius;
+            elements.borderRadiusValue.textContent = `${state.borderRadius}px`;
+            elements.showBorder.checked = state.showBorder;
+            elements.borderControls.style.display = state.showBorder ? 'block' : 'none';
+            elements.borderWidth.value = state.borderWidth;
+            elements.borderWidthValue.textContent = `${state.borderWidth}px`;
+            elements.borderColor.value = state.borderColor;
+            elements.borderColorText.value = state.borderColor;
+
+            elements.shadowBlur.value = state.shadow.blur;
+            elements.shadowBlurValue.textContent = `${state.shadow.blur}px`;
+            elements.shadowSpread.value = state.shadow.spread;
+            elements.shadowSpreadValue.textContent = `${state.shadow.spread}px`;
+            elements.shadowOpacity.value = state.shadow.opacity;
+            elements.shadowOpacityValue.textContent = `${state.shadow.opacity}%`;
+            elements.shadowX.value = state.shadow.x;
+            elements.shadowXValue.textContent = `${state.shadow.x}px`;
+            elements.shadowY.value = state.shadow.y;
+            elements.shadowYValue.textContent = `${state.shadow.y}px`;
+            elements.shadowColor.value = state.shadow.color;
+            elements.shadowColorText.value = state.shadow.color;
+
+            elements.canvasWidth.value = state.canvas.width;
+            elements.canvasHeight.value = state.canvas.height;
+
+            elements.textControls.style.display = state.textOverlay.enabled ? 'block' : 'none';
+            elements.textContent.value = state.textOverlay.content;
+            elements.textSize.value = state.textOverlay.size;
+            elements.textSizeValue.textContent = state.textOverlay.size + 'px';
+            elements.textFont.value = state.textOverlay.font;
+            elements.textColor.value = state.textOverlay.color;
+            elements.textColorText.value = state.textOverlay.color;
+            elements.textBold.checked = state.textOverlay.bold;
+            elements.textItalic.checked = state.textOverlay.italic;
+
+            elements.watermarkEnabled.checked = state.watermark.enabled;
+            elements.watermarkControls.style.display = state.watermark.enabled ? 'block' : 'none';
+            elements.watermarkText.value = state.watermark.text;
+            elements.watermarkPosition.value = state.watermark.position;
+            elements.watermarkSize.value = state.watermark.size;
+            elements.watermarkSizeValue.textContent = state.watermark.size + 'px';
+            elements.watermarkOpacity.value = state.watermark.opacity;
+            elements.watermarkOpacityValue.textContent = state.watermark.opacity + '%';
+            elements.watermarkColor.value = state.watermark.color;
+            elements.watermarkColorText.value = state.watermark.color;
+
+            elements.exportFormat.value = state.exportSettings.format;
+            elements.qualityControls.style.display = (state.exportSettings.format === 'jpeg' || state.exportSettings.format === 'webp') ? 'block' : 'none';
+            elements.exportQuality.value = state.exportSettings.quality;
+            elements.exportQualityValue.textContent = state.exportSettings.quality + '%';
+
+            // V3 UI
+            switchBgPanel(state.bgMode);
+            elements.bgSolidColor.value = state.bgColor;
+            elements.bgSolidColorText.value = state.bgColor;
+
+            const dt = state.deviceFrame.type || '';
+            elements.deviceFrameType.value = dt;
+            elements.deviceFrameControls.style.display = dt ? 'block' : 'none';
+            elements.deviceFrameColor.value = state.deviceFrame.color;
+            elements.frameUrl.value = state.deviceFrame.url;
+            elements.frameTitle.value = state.deviceFrame.title;
+            updateDeviceFrameSubcontrols(dt);
+
+            elements.redactType.value = state.redactType;
+            elements.redactIntensity.value = state.redactIntensity;
+            elements.redactIntensityValue.textContent = state.redactIntensity;
+
+            elements.spotlightEnabled.checked = state.spotlight.enabled;
+            elements.spotlightControls.style.display = state.spotlight.enabled ? 'block' : 'none';
+            elements.spotlightOpacity.value = Math.round(state.spotlight.opacity * 100);
+            elements.spotlightOpacityValue.textContent = Math.round(state.spotlight.opacity * 100) + '%';
+
+            elements.annColor && (elements.annColor.value = state.annotationColor);
+            elements.annStroke && (elements.annStroke.value = String(state.annotationStrokeWidth));
+
+            updateAngleIndicator();
+            updateGradientPreview();
+            updateToolbar();
+        }
+
+        function switchBgPanel(mode) {
+            elements.bgGradientPanel.style.display = mode === 'gradient' ? 'block' : 'none';
+            elements.bgSolidPanel.style.display = mode === 'solid' ? 'block' : 'none';
+            elements.bgTransparentPanel.style.display = mode === 'transparent' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn[data-bg]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.bg === mode);
+            });
+        }
+
+        function updateDeviceFrameSubcontrols(type) {
+            const showUrl = type === 'chrome' || type === 'safari' || type === 'firefox';
+            const showTitle = type === 'macos' || type === 'windows';
+            elements.frameUrlGroup.style.display = showUrl ? 'block' : 'none';
+            elements.frameTitleGroup.style.display = showTitle ? 'block' : 'none';
+        }
+
+        // ==================== NOTIFICATION ====================
+        function showNotification(message, type = 'success') {
+            elements.notificationText.textContent = message;
+            elements.notification.className = `notification ${type}`;
+            elements.notification.classList.add('show');
+            setTimeout(() => elements.notification.classList.remove('show'), 3000);
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function setupEventListeners() {
+            // Upload
+            elements.uploadBtn.addEventListener('click', () => elements.fileInput.click());
+            elements.uploadZone.addEventListener('click', () => elements.fileInput.click());
+            elements.fileInput.addEventListener('change', handleFileSelect);
+            elements.svgBtn.addEventListener('click', toggleSvgInput);
+            elements.renderSvgBtn.addEventListener('click', renderSvgCode);
+            elements.exportBtn.addEventListener('click', exportImage);
+            elements.resetBtn.addEventListener('click', resetToDefaults);
+            elements.undoBtn.addEventListener('click', undo);
+            elements.redoBtn.addEventListener('click', redo);
+            elements.copyClipboardBtn.addEventListener('click', copyToClipboard);
+            elements.exportHtmlBtn.addEventListener('click', exportAsHTML);
+
+            // Theme toggle
+            elements.themeToggleBtn.addEventListener('click', () => {
+                applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+            });
+
+            // Shortcuts
+            elements.shortcutsBtn.addEventListener('click', toggleShortcutsOverlay);
+            elements.closeShortcutsBtn.addEventListener('click', toggleShortcutsOverlay);
+            elements.shortcutsOverlay.addEventListener('click', (e) => {
+                if (e.target === elements.shortcutsOverlay) toggleShortcutsOverlay();
+            });
+
+            // Image editing - Transform
+            elements.rotateLeftBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.imageTransform.rotation = (state.imageTransform.rotation - 90 + 360) % 360;
+                render();
+            });
+            elements.rotateRightBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.imageTransform.rotation = (state.imageTransform.rotation + 90) % 360;
+                render();
+            });
+            elements.flipHBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.imageTransform.flipH = !state.imageTransform.flipH;
+                render();
+            });
+            elements.flipVBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.imageTransform.flipV = !state.imageTransform.flipV;
+                render();
+            });
+
+            // Image Filters
+            elements.brightness.addEventListener('input', (e) => { state.imageFilters.brightness = parseInt(e.target.value); elements.brightnessValue.textContent = `${e.target.value}%`; render(); });
+            elements.brightness.addEventListener('change', () => saveStateToHistory());
+            elements.contrast.addEventListener('input', (e) => { state.imageFilters.contrast = parseInt(e.target.value); elements.contrastValue.textContent = `${e.target.value}%`; render(); });
+            elements.contrast.addEventListener('change', () => saveStateToHistory());
+            elements.saturation.addEventListener('input', (e) => { state.imageFilters.saturation = parseInt(e.target.value); elements.saturationValue.textContent = `${e.target.value}%`; render(); });
+            elements.saturation.addEventListener('change', () => saveStateToHistory());
+            elements.blur.addEventListener('input', (e) => { state.imageFilters.blur = parseInt(e.target.value); elements.blurValue.textContent = `${e.target.value}px`; render(); });
+            elements.blur.addEventListener('change', () => saveStateToHistory());
+            elements.grayscale.addEventListener('input', (e) => { state.imageFilters.grayscale = parseInt(e.target.value); elements.grayscaleValue.textContent = `${e.target.value}%`; render(); });
+            elements.grayscale.addEventListener('change', () => saveStateToHistory());
+            elements.sepia.addEventListener('input', (e) => { state.imageFilters.sepia = parseInt(e.target.value); elements.sepiaValue.textContent = `${e.target.value}%`; render(); });
+            elements.sepia.addEventListener('change', () => saveStateToHistory());
+
+            // Drag and Drop
+            elements.dropZone.addEventListener('dragover', handleDragOver);
+            elements.dropZone.addEventListener('dragleave', handleDragLeave);
+            elements.dropZone.addEventListener('drop', handleDrop);
+            document.addEventListener('paste', handlePaste);
+
+            // Background tabs
+            document.querySelectorAll('.tab-btn[data-bg]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.bgMode = btn.dataset.bg;
+                    switchBgPanel(state.bgMode);
+                    render();
+                });
+            });
+
+            // Solid bg color
+            elements.bgSolidColor.addEventListener('input', (e) => {
+                state.bgColor = e.target.value;
+                elements.bgSolidColorText.value = e.target.value;
+                render();
+            });
+            elements.bgSolidColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                    state.bgColor = e.target.value;
+                    elements.bgSolidColor.value = e.target.value;
+                    render();
+                }
+            });
+
+            // Gradient controls
+            elements.gradientType.addEventListener('change', (e) => {
+                state.gradient.type = e.target.value;
+                elements.gradientAngleGroup.style.display = e.target.value === 'linear' ? 'block' : 'none';
+                updateGradientPreview();
+                render();
+            });
+            elements.gradientAngle.addEventListener('input', (e) => {
+                state.gradient.angle = parseInt(e.target.value);
+                elements.gradientAngleValue.textContent = `${e.target.value}°`;
+                updateAngleIndicator();
+                updateGradientPreview();
+                render();
+            });
+            elements.gradientColor1.addEventListener('input', (e) => { state.gradient.colors[0] = e.target.value; updateGradientPreview(); render(); });
+            elements.gradientColor2.addEventListener('input', (e) => { state.gradient.colors[1] = e.target.value; updateGradientPreview(); render(); });
+            elements.gradientPos1.addEventListener('input', (e) => { state.gradient.positions[0] = parseInt(e.target.value); elements.gradientPos1Value.textContent = `${e.target.value}%`; updateGradientPreview(); render(); });
+            elements.gradientPos2.addEventListener('input', (e) => { state.gradient.positions[1] = parseInt(e.target.value); elements.gradientPos2Value.textContent = `${e.target.value}%`; updateGradientPreview(); render(); });
+
+            // Gradient presets
+            document.querySelectorAll('.preset-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applyGradientPreset(btn.dataset.preset);
+                    document.querySelectorAll('.preset-button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Image settings
+            elements.padding.addEventListener('input', (e) => { state.padding = parseInt(e.target.value); elements.paddingValue.textContent = `${e.target.value}px`; render(); });
+            elements.padding.addEventListener('change', () => saveStateToHistory());
+            elements.scale.addEventListener('input', (e) => { state.scale = parseInt(e.target.value); elements.scaleValue.textContent = `${e.target.value}%`; render(); });
+            elements.scale.addEventListener('change', () => saveStateToHistory());
+            elements.borderRadius.addEventListener('input', (e) => { state.borderRadius = parseInt(e.target.value); elements.borderRadiusValue.textContent = `${e.target.value}px`; render(); });
+            elements.borderRadius.addEventListener('change', () => saveStateToHistory());
+            elements.showBorder.addEventListener('change', (e) => { state.showBorder = e.target.checked; elements.borderControls.style.display = e.target.checked ? 'block' : 'none'; render(); });
+            elements.borderWidth.addEventListener('input', (e) => { state.borderWidth = parseInt(e.target.value); elements.borderWidthValue.textContent = `${e.target.value}px`; render(); });
+            elements.borderWidth.addEventListener('change', () => saveStateToHistory());
+            elements.borderColor.addEventListener('input', (e) => { state.borderColor = e.target.value; elements.borderColorText.value = e.target.value; render(); });
+            elements.borderColorText.addEventListener('input', (e) => { if (/^#[0-9A-F]{6}$/i.test(e.target.value)) { state.borderColor = e.target.value; elements.borderColor.value = e.target.value; render(); } });
+
+            // Device frame
+            elements.deviceFrameType.addEventListener('change', (e) => {
+                saveStateToHistory();
+                const t = e.target.value || null;
+                state.deviceFrame.type = t;
+                elements.deviceFrameControls.style.display = t ? 'block' : 'none';
+                updateDeviceFrameSubcontrols(t || '');
+                render();
+            });
+            elements.deviceFrameColor.addEventListener('change', (e) => { state.deviceFrame.color = e.target.value; render(); });
+            elements.frameUrl.addEventListener('input', (e) => { state.deviceFrame.url = e.target.value; render(); });
+            elements.frameTitle.addEventListener('input', (e) => { state.deviceFrame.title = e.target.value; render(); });
+
+            // Shadow settings
+            elements.shadowBlur.addEventListener('input', (e) => { state.shadow.blur = parseInt(e.target.value); elements.shadowBlurValue.textContent = `${e.target.value}px`; render(); });
+            elements.shadowBlur.addEventListener('change', () => saveStateToHistory());
+            elements.shadowSpread.addEventListener('input', (e) => { state.shadow.spread = parseInt(e.target.value); elements.shadowSpreadValue.textContent = `${e.target.value}px`; render(); });
+            elements.shadowSpread.addEventListener('change', () => saveStateToHistory());
+            elements.shadowOpacity.addEventListener('input', (e) => { state.shadow.opacity = parseInt(e.target.value); elements.shadowOpacityValue.textContent = `${e.target.value}%`; render(); });
+            elements.shadowOpacity.addEventListener('change', () => saveStateToHistory());
+            elements.shadowX.addEventListener('input', (e) => { state.shadow.x = parseInt(e.target.value); elements.shadowXValue.textContent = `${e.target.value}px`; render(); });
+            elements.shadowX.addEventListener('change', () => saveStateToHistory());
+            elements.shadowY.addEventListener('input', (e) => { state.shadow.y = parseInt(e.target.value); elements.shadowYValue.textContent = `${e.target.value}px`; render(); });
+            elements.shadowY.addEventListener('change', () => saveStateToHistory());
+            elements.shadowColor.addEventListener('input', (e) => { state.shadow.color = e.target.value; elements.shadowColorText.value = e.target.value; render(); });
+            elements.shadowColorText.addEventListener('input', (e) => { if (/^#[0-9A-F]{6}$/i.test(e.target.value)) { state.shadow.color = e.target.value; elements.shadowColor.value = e.target.value; render(); } });
+
+            // Shadow presets
+            document.querySelectorAll('.shadow-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applyShadowPreset(btn.dataset.shadow);
+                    document.querySelectorAll('.shadow-preset-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Redaction
+            elements.redactType.addEventListener('change', (e) => { state.redactType = e.target.value; });
+            elements.redactIntensity.addEventListener('input', (e) => { state.redactIntensity = parseInt(e.target.value); elements.redactIntensityValue.textContent = e.target.value; });
+            elements.clearRedactionsBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.redactions = [];
+                state.selectedRedaction = null;
+                render();
+            });
+
+            // Spotlight
+            elements.spotlightEnabled.addEventListener('change', (e) => {
+                state.spotlight.enabled = e.target.checked;
+                elements.spotlightControls.style.display = e.target.checked ? 'block' : 'none';
+                render();
+            });
+            elements.spotlightOpacity.addEventListener('input', (e) => {
+                state.spotlight.opacity = parseInt(e.target.value) / 100;
+                elements.spotlightOpacityValue.textContent = e.target.value + '%';
+                render();
+            });
+
+            // Canvas settings
+            elements.canvasWidth.addEventListener('input', (e) => { state.canvas.width = parseInt(e.target.value); render(); });
+            elements.canvasHeight.addEventListener('input', (e) => { state.canvas.height = parseInt(e.target.value); render(); });
+
+            // Size presets
+            document.querySelectorAll('.size-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applySizePreset(btn.dataset.size);
+                    document.querySelectorAll('.size-preset-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Text overlay
+            elements.addTextBtn.addEventListener('click', () => {
+                state.textOverlay.enabled = true;
+                elements.textControls.style.display = 'block';
+                saveStateToHistory();
+                render();
+            });
+            elements.textContent.addEventListener('input', (e) => { state.textOverlay.content = e.target.value; render(); });
+            elements.textSize.addEventListener('input', (e) => { state.textOverlay.size = parseInt(e.target.value); elements.textSizeValue.textContent = e.target.value + 'px'; render(); });
+            elements.textFont.addEventListener('change', (e) => { state.textOverlay.font = e.target.value; render(); });
+            elements.textColor.addEventListener('input', (e) => { state.textOverlay.color = e.target.value; elements.textColorText.value = e.target.value; render(); });
+            elements.textColorText.addEventListener('input', (e) => { if (/^#[0-9A-F]{6}$/i.test(e.target.value)) { state.textOverlay.color = e.target.value; elements.textColor.value = e.target.value; render(); } });
+            elements.textBold.addEventListener('change', (e) => { state.textOverlay.bold = e.target.checked; render(); });
+            elements.textItalic.addEventListener('change', (e) => { state.textOverlay.italic = e.target.checked; render(); });
+            elements.removeTextBtn.addEventListener('click', () => {
+                state.textOverlay.enabled = false; state.textOverlay.content = '';
+                elements.textControls.style.display = 'none'; elements.textContent.value = '';
+                saveStateToHistory(); render();
+            });
+
+            // Watermark
+            elements.watermarkEnabled.addEventListener('change', (e) => { state.watermark.enabled = e.target.checked; elements.watermarkControls.style.display = e.target.checked ? 'block' : 'none'; saveStateToHistory(); render(); });
+            elements.watermarkText.addEventListener('input', (e) => { state.watermark.text = e.target.value; render(); });
+            elements.watermarkPosition.addEventListener('change', (e) => { state.watermark.position = e.target.value; render(); });
+            elements.watermarkSize.addEventListener('input', (e) => { state.watermark.size = parseInt(e.target.value); elements.watermarkSizeValue.textContent = e.target.value + 'px'; render(); });
+            elements.watermarkOpacity.addEventListener('input', (e) => { state.watermark.opacity = parseInt(e.target.value); elements.watermarkOpacityValue.textContent = e.target.value + '%'; render(); });
+            elements.watermarkColor.addEventListener('input', (e) => { state.watermark.color = e.target.value; elements.watermarkColorText.value = e.target.value; render(); });
+            elements.watermarkColorText.addEventListener('input', (e) => { if (/^#[0-9A-F]{6}$/i.test(e.target.value)) { state.watermark.color = e.target.value; elements.watermarkColor.value = e.target.value; render(); } });
+
+            // Export
+            elements.exportFormat.addEventListener('change', (e) => {
+                state.exportSettings.format = e.target.value;
+                elements.qualityControls.style.display = (e.target.value === 'jpeg' || e.target.value === 'webp') ? 'block' : 'none';
+            });
+            elements.exportQuality.addEventListener('input', (e) => { state.exportSettings.quality = parseInt(e.target.value); elements.exportQualityValue.textContent = e.target.value + '%'; });
+
+            // Templates
+            elements.saveTemplateBtn.addEventListener('click', saveTemplate);
+            elements.loadTemplateBtn.addEventListener('click', loadTemplate);
+            elements.clearTemplatesBtn.addEventListener('click', clearTemplates);
+
+            // Annotation toolbar
+            const annColor = document.getElementById('ann-color');
+            const annStroke = document.getElementById('ann-stroke');
+            const annDeleteBtn = document.getElementById('ann-delete-btn');
+            const annClearBtn = document.getElementById('ann-clear-btn');
+
+            document.querySelectorAll('.ann-tool-btn[data-tool]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.tool = btn.dataset.tool;
+                    state.selectedAnnotation = null;
+                    state.selectedRedaction = null;
+                    updateToolbar();
+                    render();
+                });
+            });
+
+            if (annColor) annColor.addEventListener('input', (e) => { state.annotationColor = e.target.value; });
+            if (annStroke) annStroke.addEventListener('change', (e) => { state.annotationStrokeWidth = parseInt(e.target.value); });
+            if (annDeleteBtn) annDeleteBtn.addEventListener('click', deleteSelected);
+            if (annClearBtn) annClearBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.annotations = [];
+                state.selectedAnnotation = null;
+                render();
+            });
+
+            // ==================== CANVAS MOUSE EVENTS ====================
+            elements.canvas.addEventListener('mousedown', canvasMouseDown);
+            elements.canvas.addEventListener('mousemove', canvasMouseMove);
+            elements.canvas.addEventListener('mouseup', canvasMouseUp);
+            elements.canvas.addEventListener('mouseleave', canvasMouseUp);
+
+            // ==================== KEYBOARD SHORTCUTS ====================
+            document.addEventListener('keydown', (e) => {
+                const tag = document.activeElement.tagName.toLowerCase();
+                const inInput = tag === 'input' || tag === 'textarea' || tag === 'select';
+
+                if (e.key === '?' && !inInput) { toggleShortcutsOverlay(); return; }
+                if (e.key === 'Escape') {
+                    state.tool = 'select';
+                    state.selectedAnnotation = null;
+                    state.selectedRedaction = null;
+                    elements.shortcutsOverlay.style.display = 'none';
+                    updateToolbar();
+                    render();
+                    return;
+                }
+                if (inInput) return;
+
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+                    if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); return; }
+                    if (e.key === 's') { e.preventDefault(); exportImage(); return; }
+                    if (e.key === 'c' && e.shiftKey) { e.preventDefault(); copyToClipboard(); return; }
+                }
+                if ((e.key === 'Delete' || e.key === 'Backspace') && !inInput) {
+                    deleteSelected();
+                }
+            });
+        }
+
+        // ==================== CANVAS MOUSE HANDLERS ====================
+        function canvasMouseDown(e) {
+            if (!state.image) return;
+            const { x, y } = getCanvasCoords(e);
+
+            if (state.tool === 'select') {
+                // Hit test annotations
+                const annIdx = hitTestAnnotations(x, y);
+                const redIdx = hitTestRedactions(x, y);
+                if (annIdx !== -1) {
+                    state.selectedAnnotation = annIdx;
+                    state.selectedRedaction = null;
+                    const ann = state.annotations[annIdx];
+                    dragOffset = { dx: x - ann.x1, dy: y - ann.y1 };
+                    isDraggingAnnotation = true;
+                    render();
+                } else if (redIdx !== -1) {
+                    state.selectedRedaction = redIdx;
+                    state.selectedAnnotation = null;
+                    const r = state.redactions[redIdx];
+                    dragOffset = { dx: x - r.x, dy: y - r.y };
+                    isDraggingAnnotation = true;
+                    render();
+                } else {
+                    state.selectedAnnotation = null;
+                    state.selectedRedaction = null;
+                    isDraggingAnnotation = false;
+                    render();
+                }
+                return;
+            }
+
+            drawing.active = true;
+            drawing.startX = x;
+            drawing.startY = y;
+        }
+
+        function canvasMouseMove(e) {
+            if (!state.image) return;
+            const { x, y } = getCanvasCoords(e);
+
+            if (state.tool === 'select' && isDraggingAnnotation) {
+                if (state.selectedAnnotation !== null && state.annotations[state.selectedAnnotation]) {
+                    const ann = state.annotations[state.selectedAnnotation];
+                    const dx = ann.x2 - ann.x1;
+                    const dy = ann.y2 - ann.y1;
+                    ann.x1 = x - dragOffset.dx;
+                    ann.y1 = y - dragOffset.dy;
+                    ann.x2 = ann.x1 + dx;
+                    ann.y2 = ann.y1 + dy;
+                    render();
+                } else if (state.selectedRedaction !== null && state.redactions[state.selectedRedaction]) {
+                    const r = state.redactions[state.selectedRedaction];
+                    r.x = x - dragOffset.dx;
+                    r.y = y - dragOffset.dy;
+                    render();
+                }
+                return;
+            }
+
+            if (!drawing.active) return;
+            drawPreviewAnnotation(drawing.startX, drawing.startY, x, y);
+        }
+
+        function canvasMouseUp(e) {
+            if (!state.image) return;
+
+            if (state.tool === 'select') {
+                if (isDraggingAnnotation) {
+                    saveStateToHistory();
+                    isDraggingAnnotation = false;
+                }
+                return;
+            }
+
+            if (!drawing.active) return;
+            drawing.active = false;
+
+            const { x, y } = getCanvasCoords(e);
+            const dx = Math.abs(x - drawing.startX), dy = Math.abs(y - drawing.startY);
+            if (dx < 3 && dy < 3 && state.tool !== 'number') return; // ignore tiny moves
+
+            saveStateToHistory();
+
+            if (state.tool === 'arrow' || state.tool === 'rect' || state.tool === 'circle') {
+                state.annotations.push({
+                    id: Date.now(),
+                    type: state.tool,
+                    x1: drawing.startX, y1: drawing.startY,
+                    x2: x, y2: y,
+                    color: state.annotationColor,
+                    strokeWidth: state.annotationStrokeWidth,
+                    number: null
+                });
+            } else if (state.tool === 'number') {
+                state.annotations.push({
+                    id: Date.now(),
+                    type: 'number',
+                    x1: x, y1: y, x2: x, y2: y,
+                    color: state.annotationColor,
+                    strokeWidth: state.annotationStrokeWidth,
+                    number: state.nextNumber++
+                });
+            } else if (state.tool === 'redact') {
+                const rx = Math.min(drawing.startX, x);
+                const ry = Math.min(drawing.startY, y);
+                const rw = Math.abs(x - drawing.startX);
+                const rh = Math.abs(y - drawing.startY);
+                if (rw > 4 && rh > 4) {
+                    state.redactions.push({
+                        id: Date.now(),
+                        x: rx, y: ry, w: rw, h: rh,
+                        type: state.redactType,
+                        intensity: state.redactIntensity
+                    });
+                }
+            } else if (state.tool === 'spotlight') {
+                const cw = elements.canvas.width, ch = elements.canvas.height;
+                const rx = Math.min(drawing.startX, x);
+                const ry = Math.min(drawing.startY, y);
+                const rw = Math.abs(x - drawing.startX);
+                const rh = Math.abs(y - drawing.startY);
+                state.spotlight.x = rx / cw;
+                state.spotlight.y = ry / ch;
+                state.spotlight.w = rw / cw;
+                state.spotlight.h = rh / ch;
+                state.spotlight.enabled = true;
+                document.getElementById('spotlight-enabled').checked = true;
+                document.getElementById('spotlight-controls').style.display = 'block';
+            }
+
+            render();
+        }
+
+        // ==================== INIT ====================
+        function init() {
+            // Load saved theme
+            try {
+                const savedTheme = localStorage.getItem('snapshotpro_theme');
+                if (savedTheme) applyTheme(savedTheme);
+                else applyTheme('dark');
+            } catch(e) { applyTheme('dark'); }
+
+            setupEventListeners();
+            updateAngleIndicator();
+            updateGradientPreview();
+            updateTemplateList();
+
+            document.querySelector('.preset-button[data-preset="sunset"]').classList.add('active');
+            document.querySelector('.shadow-preset-btn[data-shadow="soft"]').classList.add('active');
+        }
+
+        init();
+</script>
+</body>
+</html>
+
+        // ==================== SETUP EVENT LISTENERS ====================
+        function setupEventListeners() {
+            // Upload
+            elements.uploadBtn.addEventListener('click', () => elements.fileInput.click());
+            elements.uploadZone.addEventListener('click', () => elements.fileInput.click());
+            elements.fileInput.addEventListener('change', handleFileSelect);
+            elements.svgBtn.addEventListener('click', toggleSvgInput);
+            elements.renderSvgBtn.addEventListener('click', renderSvgCode);
+
+            // Header actions
+            elements.exportBtn.addEventListener('click', exportImage);
+            elements.resetBtn.addEventListener('click', resetToDefaults);
+            elements.undoBtn.addEventListener('click', undo);
+            elements.redoBtn.addEventListener('click', redo);
+
+            // Theme toggle
+            elements.themeToggleBtn.addEventListener('click', () => {
+                state.theme = state.theme === 'dark' ? 'light' : 'dark';
+                applyTheme(state.theme);
+                localStorage.setItem('snapshotpro_theme', state.theme);
+            });
+
+            // Shortcuts overlay
+            elements.shortcutsBtn.addEventListener('click', toggleShortcutsOverlay);
+            elements.closeShortcutsBtn.addEventListener('click', toggleShortcutsOverlay);
+            elements.shortcutsOverlay.addEventListener('click', (e) => {
+                if (e.target === elements.shortcutsOverlay) toggleShortcutsOverlay();
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                const tag = document.activeElement.tagName.toLowerCase();
+                const inInput = tag === 'input' || tag === 'textarea' || tag === 'select';
+                if (e.key === '?' && !inInput) { toggleShortcutsOverlay(); return; }
+                if (e.key === 'Escape') {
+                    state.tool = 'select';
+                    state.selectedAnnotation = null;
+                    state.selectedRedaction = null;
+                    updateToolbar();
+                    if (state.image) render();
+                    return;
+                }
+                if (inInput) return;
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+                    if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); return; }
+                    if (e.key === 's') { e.preventDefault(); exportImage(); return; }
+                    if (e.key === 'c' && e.shiftKey) { e.preventDefault(); copyToClipboard(); return; }
+                }
+                if (e.key === 'Delete' || e.key === 'Backspace') { deleteSelected(); }
+            });
+
+            // Drag and drop
+            elements.dropZone.addEventListener('dragover', handleDragOver);
+            elements.dropZone.addEventListener('dragleave', handleDragLeave);
+            elements.dropZone.addEventListener('drop', handleDrop);
+            document.addEventListener('paste', handlePaste);
+
+            // Image editing - transforms
+            elements.rotateLeftBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.imageTransform.rotation = (state.imageTransform.rotation - 90 + 360) % 360;
+                render();
+            });
+            elements.rotateRightBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.imageTransform.rotation = (state.imageTransform.rotation + 90) % 360;
+                render();
+            });
+            elements.flipHBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.imageTransform.flipH = !state.imageTransform.flipH;
+                render();
+            });
+            elements.flipVBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.imageTransform.flipV = !state.imageTransform.flipV;
+                render();
+            });
+
+            // Filters
+            const filterMap = [
+                ['brightness', 'brightness', 'brightnessValue', '%'],
+                ['contrast', 'contrast', 'contrastValue', '%'],
+                ['saturation', 'saturation', 'saturationValue', '%'],
+                ['blur', 'blur', 'blurValue', 'px'],
+                ['grayscale', 'grayscale', 'grayscaleValue', '%'],
+                ['sepia', 'sepia', 'sepiaValue', '%'],
+            ];
+            filterMap.forEach(([stateKey, elKey, valKey, unit]) => {
+                elements[elKey].addEventListener('input', (e) => {
+                    state.imageFilters[stateKey] = parseInt(e.target.value);
+                    elements[valKey].textContent = `${e.target.value}${unit}`;
+                    render();
+                });
+                elements[elKey].addEventListener('change', () => saveStateToHistory());
+            });
+
+            // Background mode tabs
+            document.querySelectorAll('.tab-btn[data-bg]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.bgMode = btn.dataset.bg;
+                    switchBgPanel(state.bgMode);
+                    render();
+                });
+            });
+
+            // Solid background color
+            if (elements.bgSolidColor) {
+                elements.bgSolidColor.addEventListener('input', (e) => {
+                    state.bgColor = e.target.value;
+                    if (elements.bgSolidColorText) elements.bgSolidColorText.value = e.target.value;
+                    render();
+                });
+            }
+            if (elements.bgSolidColorText) {
+                elements.bgSolidColorText.addEventListener('input', (e) => {
+                    if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                        state.bgColor = e.target.value;
+                        if (elements.bgSolidColor) elements.bgSolidColor.value = e.target.value;
+                        render();
+                    }
+                });
+            }
+
+            // Gradient controls
+            elements.gradientType.addEventListener('change', (e) => {
+                state.gradient.type = e.target.value;
+                elements.gradientAngleGroup.style.display = e.target.value === 'linear' ? 'block' : 'none';
+                updateGradientPreview();
+                render();
+            });
+            elements.gradientAngle.addEventListener('input', (e) => {
+                state.gradient.angle = parseInt(e.target.value);
+                elements.gradientAngleValue.textContent = `${e.target.value}°`;
+                updateAngleIndicator();
+                updateGradientPreview();
+                render();
+            });
+            elements.gradientColor1.addEventListener('input', (e) => { state.gradient.colors[0] = e.target.value; updateGradientPreview(); render(); });
+            elements.gradientColor2.addEventListener('input', (e) => { state.gradient.colors[1] = e.target.value; updateGradientPreview(); render(); });
+            elements.gradientPos1.addEventListener('input', (e) => { state.gradient.positions[0] = parseInt(e.target.value); elements.gradientPos1Value.textContent = `${e.target.value}%`; updateGradientPreview(); render(); });
+            elements.gradientPos2.addEventListener('input', (e) => { state.gradient.positions[1] = parseInt(e.target.value); elements.gradientPos2Value.textContent = `${e.target.value}%`; updateGradientPreview(); render(); });
+
+            // Gradient presets
+            document.querySelectorAll('.preset-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applyGradientPreset(btn.dataset.preset);
+                    document.querySelectorAll('.preset-button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Device frame
+            elements.deviceFrameType.addEventListener('change', (e) => {
+                saveStateToHistory();
+                state.deviceFrame.type = e.target.value || null;
+                elements.deviceFrameControls.style.display = e.target.value ? 'block' : 'none';
+                updateDeviceFrameSubcontrols(e.target.value);
+                render();
+            });
+            elements.deviceFrameColor.addEventListener('change', (e) => {
+                state.deviceFrame.color = e.target.value;
+                render();
+            });
+            if (elements.frameUrl) {
+                elements.frameUrl.addEventListener('input', (e) => {
+                    state.deviceFrame.url = e.target.value;
+                    render();
+                });
+            }
+            if (elements.frameTitle) {
+                elements.frameTitle.addEventListener('input', (e) => {
+                    state.deviceFrame.title = e.target.value;
+                    render();
+                });
+            }
+
+            // Image settings
+            elements.padding.addEventListener('input', (e) => { state.padding = parseInt(e.target.value); elements.paddingValue.textContent = `${e.target.value}px`; render(); });
+            elements.padding.addEventListener('change', () => saveStateToHistory());
+            elements.scale.addEventListener('input', (e) => { state.scale = parseInt(e.target.value); elements.scaleValue.textContent = `${e.target.value}%`; render(); });
+            elements.scale.addEventListener('change', () => saveStateToHistory());
+            elements.borderRadius.addEventListener('input', (e) => { state.borderRadius = parseInt(e.target.value); elements.borderRadiusValue.textContent = `${e.target.value}px`; render(); });
+            elements.borderRadius.addEventListener('change', () => saveStateToHistory());
+            elements.showBorder.addEventListener('change', (e) => { state.showBorder = e.target.checked; elements.borderControls.style.display = e.target.checked ? 'block' : 'none'; render(); });
+            elements.borderWidth.addEventListener('input', (e) => { state.borderWidth = parseInt(e.target.value); elements.borderWidthValue.textContent = `${e.target.value}px`; render(); });
+            elements.borderColor.addEventListener('input', (e) => { state.borderColor = e.target.value; elements.borderColorText.value = e.target.value; render(); });
+            elements.borderColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) { state.borderColor = e.target.value; elements.borderColor.value = e.target.value; render(); }
+            });
+
+            // Shadow settings
+            elements.shadowBlur.addEventListener('input', (e) => { state.shadow.blur = parseInt(e.target.value); elements.shadowBlurValue.textContent = `${e.target.value}px`; render(); });
+            elements.shadowBlur.addEventListener('change', () => saveStateToHistory());
+            elements.shadowSpread.addEventListener('input', (e) => { state.shadow.spread = parseInt(e.target.value); elements.shadowSpreadValue.textContent = `${e.target.value}px`; render(); });
+            elements.shadowSpread.addEventListener('change', () => saveStateToHistory());
+            elements.shadowOpacity.addEventListener('input', (e) => { state.shadow.opacity = parseInt(e.target.value); elements.shadowOpacityValue.textContent = `${e.target.value}%`; render(); });
+            elements.shadowOpacity.addEventListener('change', () => saveStateToHistory());
+            elements.shadowX.addEventListener('input', (e) => { state.shadow.x = parseInt(e.target.value); elements.shadowXValue.textContent = `${e.target.value}px`; render(); });
+            elements.shadowX.addEventListener('change', () => saveStateToHistory());
+            elements.shadowY.addEventListener('input', (e) => { state.shadow.y = parseInt(e.target.value); elements.shadowYValue.textContent = `${e.target.value}px`; render(); });
+            elements.shadowY.addEventListener('change', () => saveStateToHistory());
+            elements.shadowColor.addEventListener('input', (e) => { state.shadow.color = e.target.value; elements.shadowColorText.value = e.target.value; render(); });
+            elements.shadowColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) { state.shadow.color = e.target.value; elements.shadowColor.value = e.target.value; render(); }
+            });
+
+            // Shadow presets
+            document.querySelectorAll('.shadow-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applyShadowPreset(btn.dataset.shadow);
+                    document.querySelectorAll('.shadow-preset-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Redaction controls
+            if (elements.redactType) {
+                elements.redactType.addEventListener('change', (e) => { state.redactType = e.target.value; });
+            }
+            if (elements.redactIntensity) {
+                elements.redactIntensity.addEventListener('input', (e) => {
+                    state.redactIntensity = parseInt(e.target.value);
+                    elements.redactIntensityValue.textContent = e.target.value;
+                    render();
+                });
+            }
+            if (elements.clearRedactionsBtn) {
+                elements.clearRedactionsBtn.addEventListener('click', () => {
+                    saveStateToHistory();
+                    state.redactions = [];
+                    render();
+                    showNotification('Redactions cleared!', 'success');
+                });
+            }
+
+            // Spotlight controls
+            if (elements.spotlightEnabled) {
+                elements.spotlightEnabled.addEventListener('change', (e) => {
+                    state.spotlight.enabled = e.target.checked;
+                    elements.spotlightControls.style.display = e.target.checked ? 'block' : 'none';
+                    render();
+                });
+            }
+            if (elements.spotlightOpacity) {
+                elements.spotlightOpacity.addEventListener('input', (e) => {
+                    state.spotlight.opacity = parseInt(e.target.value) / 100;
+                    elements.spotlightOpacityValue.textContent = `${e.target.value}%`;
+                    render();
+                });
+            }
+
+            // Canvas settings
+            elements.canvasWidth.addEventListener('input', (e) => { state.canvas.width = parseInt(e.target.value); render(); });
+            elements.canvasHeight.addEventListener('input', (e) => { state.canvas.height = parseInt(e.target.value); render(); });
+
+            // Size presets
+            document.querySelectorAll('.size-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    applySizePreset(btn.dataset.size);
+                    document.querySelectorAll('.size-preset-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Text overlay
+            elements.addTextBtn.addEventListener('click', () => {
+                state.textOverlay.enabled = true;
+                elements.textControls.style.display = 'block';
+                saveStateToHistory();
+                render();
+            });
+            elements.textContent.addEventListener('input', (e) => { state.textOverlay.content = e.target.value; render(); });
+            elements.textSize.addEventListener('input', (e) => { state.textOverlay.size = parseInt(e.target.value); elements.textSizeValue.textContent = e.target.value; render(); });
+            elements.textFont.addEventListener('change', (e) => { state.textOverlay.font = e.target.value; render(); });
+            elements.textColor.addEventListener('input', (e) => { state.textOverlay.color = e.target.value; elements.textColorText.value = e.target.value; render(); });
+            elements.textColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) { state.textOverlay.color = e.target.value; elements.textColor.value = e.target.value; render(); }
+            });
+            elements.textBold.addEventListener('change', (e) => { state.textOverlay.bold = e.target.checked; render(); });
+            elements.textItalic.addEventListener('change', (e) => { state.textOverlay.italic = e.target.checked; render(); });
+            elements.removeTextBtn.addEventListener('click', () => {
+                state.textOverlay.enabled = false;
+                state.textOverlay.content = '';
+                elements.textControls.style.display = 'none';
+                elements.textContent.value = '';
+                saveStateToHistory();
+                render();
+            });
+
+            // Watermark
+            elements.watermarkEnabled.addEventListener('change', (e) => {
+                state.watermark.enabled = e.target.checked;
+                elements.watermarkControls.style.display = e.target.checked ? 'block' : 'none';
+                saveStateToHistory();
+                render();
+            });
+            elements.watermarkText.addEventListener('input', (e) => { state.watermark.text = e.target.value; render(); });
+            elements.watermarkPosition.addEventListener('change', (e) => { state.watermark.position = e.target.value; render(); });
+            elements.watermarkSize.addEventListener('input', (e) => { state.watermark.size = parseInt(e.target.value); elements.watermarkSizeValue.textContent = `${e.target.value}px`; render(); });
+            elements.watermarkOpacity.addEventListener('input', (e) => { state.watermark.opacity = parseInt(e.target.value); elements.watermarkOpacityValue.textContent = `${e.target.value}%`; render(); });
+            elements.watermarkColor.addEventListener('input', (e) => { state.watermark.color = e.target.value; elements.watermarkColorText.value = e.target.value; render(); });
+            elements.watermarkColorText.addEventListener('input', (e) => {
+                if (/^#[0-9A-F]{6}$/i.test(e.target.value)) { state.watermark.color = e.target.value; elements.watermarkColor.value = e.target.value; render(); }
+            });
+
+            // Export controls
+            elements.exportFormat.addEventListener('change', (e) => {
+                state.exportSettings.format = e.target.value;
+                elements.qualityControls.style.display = (e.target.value === 'jpeg' || e.target.value === 'webp') ? 'block' : 'none';
+            });
+            elements.exportQuality.addEventListener('input', (e) => {
+                state.exportSettings.quality = parseInt(e.target.value);
+                elements.exportQualityValue.textContent = `${e.target.value}%`;
+            });
+            elements.copyClipboardBtn.addEventListener('click', copyToClipboard);
+            if (elements.exportHtmlBtn) elements.exportHtmlBtn.addEventListener('click', exportAsHTML);
+
+            // Templates
+            elements.saveTemplateBtn.addEventListener('click', saveTemplate);
+            elements.loadTemplateBtn.addEventListener('click', loadTemplate);
+            elements.clearTemplatesBtn.addEventListener('click', clearTemplates);
+
+            // Annotation toolbar
+            const annColor = document.getElementById('ann-color');
+            const annStroke = document.getElementById('ann-stroke');
+            const annDeleteBtn = document.getElementById('ann-delete-btn');
+            const annClearBtn = document.getElementById('ann-clear-btn');
+
+            document.querySelectorAll('.ann-tool-btn[data-tool]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.tool = btn.dataset.tool;
+                    updateToolbar();
+                    elements.canvas.dataset.tool = state.tool;
+                });
+            });
+            if (annColor) annColor.addEventListener('input', (e) => { state.annotationColor = e.target.value; });
+            if (annStroke) annStroke.addEventListener('change', (e) => { state.annotationStrokeWidth = parseInt(e.target.value); });
+            if (annDeleteBtn) annDeleteBtn.addEventListener('click', deleteSelected);
+            if (annClearBtn) annClearBtn.addEventListener('click', () => {
+                saveStateToHistory();
+                state.annotations = [];
+                state.redactions = [];
+                state.selectedAnnotation = null;
+                state.selectedRedaction = null;
+                render();
+                showNotification('All annotations cleared!', 'success');
+            });
+
+            // Canvas mouse events for annotations/redactions/spotlight
+            elements.canvas.addEventListener('mousedown', onCanvasMouseDown);
+            elements.canvas.addEventListener('mousemove', onCanvasMouseMove);
+            elements.canvas.addEventListener('mouseup', onCanvasMouseUp);
+            elements.canvas.addEventListener('mouseleave', onCanvasMouseUp);
+        }
+
+        // ==================== CANVAS INTERACTION ====================
+        function onCanvasMouseDown(e) {
+            if (!state.image) return;
+            const { x, y } = getCanvasCoords(e);
+
+            if (state.tool === 'select') {
+                const annIdx = hitTestAnnotations(x, y);
+                const redIdx = hitTestRedactions(x, y);
+                if (annIdx !== null) {
+                    state.selectedAnnotation = annIdx;
+                    state.selectedRedaction = null;
+                    const ann = state.annotations[annIdx];
+                    dragOffset = { dx: x - ann.x1, dy: y - ann.y1 };
+                    isDraggingAnnotation = true;
+                } else if (redIdx !== null) {
+                    state.selectedRedaction = redIdx;
+                    state.selectedAnnotation = null;
+                    isDraggingAnnotation = false;
+                } else {
+                    state.selectedAnnotation = null;
+                    state.selectedRedaction = null;
+                    isDraggingAnnotation = false;
+                }
+                render();
+                return;
+            }
+
+            drawing = { active: true, startX: x, startY: y };
+        }
+
+        function onCanvasMouseMove(e) {
+            if (!state.image) return;
+            const { x, y } = getCanvasCoords(e);
+
+            if (state.tool === 'select' && isDraggingAnnotation && state.selectedAnnotation !== null) {
+                const ann = state.annotations[state.selectedAnnotation];
+                const w = ann.x2 - ann.x1;
+                const h = ann.y2 - ann.y1;
+                ann.x1 = x - dragOffset.dx;
+                ann.y1 = y - dragOffset.dy;
+                ann.x2 = ann.x1 + w;
+                ann.y2 = ann.y1 + h;
+                render();
+                return;
+            }
+
+            if (!drawing.active) return;
+
+            // Live preview: re-render and draw current shape
+            render();
+            const cx = drawing.startX, cy = drawing.startY;
+            const w = x - cx, h = y - cy;
+
+            ctx.save();
+            ctx.strokeStyle = state.annotationColor;
+            ctx.lineWidth = state.annotationStrokeWidth;
+            ctx.fillStyle = state.annotationColor;
+
+            if (state.tool === 'arrow') {
+                drawArrow(ctx, cx, cy, x, y);
+            } else if (state.tool === 'rect') {
+                ctx.strokeRect(cx, cy, w, h);
+            } else if (state.tool === 'circle') {
+                ctx.beginPath();
+                ctx.ellipse(cx + w/2, cy + h/2, Math.abs(w/2), Math.abs(h/2), 0, 0, Math.PI*2);
+                ctx.stroke();
+            } else if (state.tool === 'redact' || state.tool === 'spotlight') {
+                ctx.setLineDash([6,3]);
+                ctx.strokeStyle = state.tool === 'redact' ? '#ff0000' : '#ffff00';
+                ctx.strokeRect(cx, cy, w, h);
+                ctx.setLineDash([]);
+            }
+            ctx.restore();
+        }
+
+        function onCanvasMouseUp(e) {
+            if (!state.image || !drawing.active) {
+                isDraggingAnnotation = false;
+                return;
+            }
+            if (state.tool === 'select') { isDraggingAnnotation = false; saveStateToHistory(); return; }
+
+            const { x, y } = getCanvasCoords(e);
+            const cx = drawing.startX, cy = drawing.startY;
+            const dist = Math.hypot(x - cx, y - cy);
+            drawing.active = false;
+
+            if (dist < 5) { render(); return; } // too small, ignore
+
+            if (state.tool === 'redact') {
+                saveStateToHistory();
+                const x1 = Math.min(cx, x), y1 = Math.min(cy, y);
+                const w = Math.abs(x - cx), h = Math.abs(y - cy);
+                state.redactions.push({
+                    id: Date.now(),
+                    x: x1, y: y1, w, h,
+                    type: state.redactType || 'pixelate',
+                    intensity: state.redactIntensity || 12
+                });
+            } else if (state.tool === 'spotlight') {
+                const cw = elements.canvas.width, ch = elements.canvas.height;
+                state.spotlight.x = Math.min(cx, x) / cw;
+                state.spotlight.y = Math.min(cy, y) / ch;
+                state.spotlight.w = Math.abs(x - cx) / cw;
+                state.spotlight.h = Math.abs(y - cy) / ch;
+                state.spotlight.enabled = true;
+                if (elements.spotlightEnabled) elements.spotlightEnabled.checked = true;
+                if (elements.spotlightControls) elements.spotlightControls.style.display = 'block';
+            } else {
+                // annotation
+                saveStateToHistory();
+                const ann = {
+                    id: Date.now(),
+                    type: state.tool,
+                    x1: cx, y1: cy, x2: x, y2: y,
+                    color: state.annotationColor,
+                    strokeWidth: state.annotationStrokeWidth,
+                    number: state.tool === 'number' ? state.nextNumber++ : null
+                };
+                state.annotations.push(ann);
+            }
+            render();
+        }
+
+        function drawArrow(ctx, x1, y1, x2, y2) {
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const headLen = Math.max(12, ctx.lineWidth * 4);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            // Arrowhead
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI/6), y2 - headLen * Math.sin(angle - Math.PI/6));
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI/6), y2 - headLen * Math.sin(angle + Math.PI/6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // ==================== INIT ====================
+        function init() {
+            // Restore theme
+            const savedTheme = localStorage.getItem('snapshotpro_theme') || 'dark';
+            state.theme = savedTheme;
+            applyTheme(savedTheme);
+
+            setupEventListeners();
+            updateAngleIndicator();
+            updateGradientPreview();
+            updateTemplateList();
+
+            // Set active defaults
+            const sunsetBtn = document.querySelector('.preset-button[data-preset="sunset"]');
+            if (sunsetBtn) sunsetBtn.classList.add('active');
+            const softBtn = document.querySelector('.shadow-preset-btn[data-shadow="soft"]');
+            if (softBtn) softBtn.classList.add('active');
+
+            // Set canvas data-tool
+            elements.canvas.dataset.tool = 'select';
+        }
+
+        init();
+    </script>
+</body>
+</html>

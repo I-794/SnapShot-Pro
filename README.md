@@ -22,5 +22,6 @@ Enchance Your Screenshots
 
 ## Screenshots
 
-![App Screenshot](https://private-user-images.githubusercontent.com/147570875/511565517-d3b5bf14-8a47-4f67-ad78-270d5f8eeb41.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzMwNjA5MDgsIm5iZiI6MTc3MzA2MDYwOCwicGF0aCI6Ii8xNDc1NzA4NzUvNTExNTY1NTE3LWQzYjViZjE0LThhNDctNGY2Ny1hZDc4LTI3MGQ1ZjhlZWI0MS5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjYwMzA5JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MDMwOVQxMjUwMDhaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1iODBlZjQxYjlkYzE4YjU0NzU5NmExMjE1YWM2OTUwZjFlNjJhOWYzNGU0NTM2ZDAzM2UyYmE5MGNhZDRmZWM5JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.sLvjL7LQZZivoPE_eTKGjCqHuqjp1hWG1EhAdwnWbUo)
+<img src="blob:chrome-untrusted://media-app/19c483f6-230d-4d06-8571-f87c5279a55f" alt="Screenshot 2026-03-18 1.50.30 PM.png"/><img width="1317" height="642" alt="image" src="https://github.com/user-attachments/assets/3b533a6a-fdbe-4ba0-a439-2c2988dc5ce1" />
+
 

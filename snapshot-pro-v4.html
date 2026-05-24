@@ -2297,6 +2297,7 @@
         // ==================== EXTRA IMAGES ====================
         function renderExtraImages() {
             state.extraImages.forEach(ei => {
+                if (ei.visible === false) return;
                 const img = imageRegistry[ei.id];
                 if (!img) return;
                 const cw = elements.canvas.width;
@@ -3592,6 +3593,7 @@
             }
 
             render();
+            if (typeof renderLayersPanel === 'function') renderLayersPanel();
         }
 
         // ====================================================

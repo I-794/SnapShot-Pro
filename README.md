@@ -1,27 +1,29 @@
 
-# SnapShotPro
+# SnapShot-Pro
 
-Enchance Your Screenshots
+Enhance Your Screenshots. A self-contained, zero-build screenshot editor in a single HTML file.
 
+The canonical build is **`snapshot-pro-v3.html`** (now at v4 — filename preserved so existing links keep working). Open it in any modern browser or serve locally with `python3 -m http.server`.
 
-## Features
+## v4 — Pro Editor Overhaul
 
-1. Multi-Format Export PNG - Lossless, high quality (default) JPEG - Lossy with quality slider (1-100%) WebP - Modern format with quality slider (1-100%) Quality controls appear dynamically only for JPEG/WebP Smart file naming with correct extensions
+A major jump from v3. Same single-HTML, zero-dependency footprint, but the editor now feels like a real pro tool.
 
-2. Clipboard Copy One-click "Copy to Clipboard" button Exports as PNG for maximum compatibility Works with the standard clipboard API Success/error notifications
+- **Layers panel** — every annotation, redaction, extra image, text overlay, sticker, watermark, and spotlight shows up as a draggable layer with visibility toggle, lock, double-click rename, and drag-reorder for z-order.
+- **Scrubbable history timeline** — bottom-of-screen dot strip; click any dot to jump to that point in history. Ctrl+Z / Ctrl+Y still work.
+- **Canvas zoom & pan + mini-map** — 10–400% zoom (Ctrl/Cmd + scroll), Space-drag to pan, Fit button, and a live mini-map in the corner showing the current viewport.
+- **Command palette (Cmd/Ctrl+K)** — fuzzy-search ~40 commands: export, theme, tools, tilt presets, mesh presets, scenes, stickers.
+- **3D tilt** — rotateX/Y/Z + perspective sliders with three presets (Isometric, Lean, Card).
+- **Mesh gradient backgrounds** — interactive 2D pad with 4 draggable color blobs, plus Aurora / Sunset / Cyber / Pastel presets.
+- **Mockup scenes** — drop your screenshot into a Laptop, Phone, Tablet, Blurred Background, or Floating Card scene with a single click.
+- **Sticker library** — 4 categories (Reactions, Badges, Arrows, Callouts), ~60 inline glyph stickers added as proper layers.
+- **Alt-click layer select** — hold Alt while clicking the canvas to select the topmost annotation/redaction under your cursor without leaving your current drawing tool.
+- **Glass UI** — backdrop-blur sidebar, gradient section titles, micro-transitions, polished toolbar buttons.
 
-3. Watermark Feature Enable/disable toggle Customizable text content 5 Position Options: Bottom Right (default) Bottom Left Top Right Top Left Center Font size control (10px - 48px) Opacity control (0-100%) Color picker with hex input Smart 20px padding from edges
+## Carried over from v3
 
-4. Template System Save current settings as named templates Load templates instantly Clear all templates option Persists in localStorage (survives browser refresh) Shows template count Saves everything: filters, overlays, watermarks, gradients, shadows, canvas size, export settings, etc.
-
-
-## Roadmap
-
-- Coming soon
-
+Multi-format export (PNG / JPEG / WebP), clipboard copy, watermarks, templates, gradient/solid/transparent backgrounds, device & window frames (macOS, Windows, iPhone, Chrome, Safari, Firefox), annotations (arrow / rect / circle / number), redaction (pixelate / blur), spotlight, auto-layout for multi-image arrangement, light/dark themes, keyboard shortcuts, HTML card export.
 
 ## Screenshots
 
-<img src="blob:chrome-untrusted://media-app/19c483f6-230d-4d06-8571-f87c5279a55f" alt="Screenshot 2026-03-18 1.50.30 PM.png"/><img width="1317" height="642" alt="image" src="https://github.com/user-attachments/assets/3b533a6a-fdbe-4ba0-a439-2c2988dc5ce1" />
-
-
+<img width="1317" height="642" alt="SnapShot-Pro v3" src="https://github.com/user-attachments/assets/3b533a6a-fdbe-4ba0-a439-2c2988dc5ce1" />

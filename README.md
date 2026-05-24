@@ -15,20 +15,6 @@ Enchance Your Screenshots
 4. Template System Save current settings as named templates Load templates instantly Clear all templates option Persists in localStorage (survives browser refresh) Shows template count Saves everything: filters, overlays, watermarks, gradients, shadows, canvas size, export settings, etc.
 
 
-## v4 — AI-Powered Enhancements
-
-The canonical v4 build lives in **`snapshot-pro-v3.html`** (self-contained HTML, no build step). Open it in a modern browser or serve locally with `python3 -m http.server`.
-
-New "AI Enhancements" sidebar section:
-
-- **Smart Auto-Redact** — runs Tesseract.js OCR plus MediaPipe face detection in the browser, then scans recognized text for emails, phone numbers, Luhn-valid credit card numbers, and common API key formats (Anthropic `sk-ant-`, OpenAI `sk-`, Slack `xox*`, GitHub `ghp_`, AWS `AKIA…`). Detections appear as dashed review boxes — accept all to convert them into pixelate/blur redactions that match the existing manual redact pipeline.
-- **Auto-Crop & Frame** — trims transparent or uniform-color borders and suggests a device frame (Chrome / macOS / iPhone) based on the resulting aspect ratio.
-- **Alt-Text & Caption** — local OCR-based heuristic by default. With an optional Anthropic API key (stored in this browser's `localStorage`), uses Claude vision (`claude-haiku-4-5-20251001` or `claude-opus-4-7`) for higher-quality output.
-
-### API key trust model
-
-Claude calls go directly from the browser to `api.anthropic.com` using the `anthropic-dangerous-direct-browser-access: true` header. Your key is stored only in `localStorage` on this device and is never sent anywhere except the Anthropic API. Only paste a key you control.
-
 ## Roadmap
 
 - Coming soon

@@ -3,11 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapShot-Pro v4 - AI-Powered Screenshot Enhancement</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection@1.0.3/dist/face-detection.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4.1646425229/face_detection.js" crossorigin="anonymous"></script>
+    <title>SnapShot-Pro v3 - Professional Screenshot Sharing</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -227,50 +223,6 @@
         .checkerboard-info { width: 100%; height: 40px; border-radius: 6px; background-image: conic-gradient(#808080 90deg, transparent 90deg 180deg, #808080 180deg 270deg, transparent 270deg); background-size: 16px 16px; margin-bottom: 8px; border: 1px solid var(--border-color); }
 
         @media (max-width: 1024px) { .sidebar { width: 320px; } }
-
-        /* AI Enhancements */
-        .ai-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .ai-gear-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
-        .ai-gear-btn:hover { color: var(--text-primary); border-color: var(--accent-primary); }
-        .ai-btn-row { display: flex; flex-direction: column; gap: 8px; }
-        .ai-action-btn { width: 100%; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 13px; font-weight: 500; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
-        .ai-action-btn:hover:not(:disabled) { border-color: var(--accent-primary); background: var(--accent-light); }
-        .ai-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .ai-action-btn .ai-icon { font-size: 16px; }
-        .ai-action-btn .ai-sub { display: block; font-size: 11px; color: var(--text-tertiary); font-weight: 400; margin-top: 2px; }
-        #ai-progress { display: none; margin-top: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 6px; font-size: 12px; color: var(--text-secondary); }
-        #ai-progress-bar { width: 100%; height: 4px; background: var(--border-color); border-radius: 2px; overflow: hidden; margin-top: 6px; }
-        #ai-progress-bar-fill { height: 100%; background: var(--accent-primary); width: 0%; transition: width 0.2s; }
-        .ai-alt-output { display: none; margin-top: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px; }
-        .ai-alt-output .control-label { margin-top: 8px; }
-        .ai-alt-output textarea { width: 100%; min-height: 56px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 8px; font-family: inherit; font-size: 12px; resize: vertical; }
-        .ai-alt-output .ai-copy-row { display: flex; gap: 6px; margin-top: 6px; }
-        .ai-alt-output .ai-copy-btn { flex: 1; padding: 6px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; font-size: 11px; cursor: pointer; }
-        .ai-alt-output .ai-copy-btn:hover { border-color: var(--accent-primary); }
-
-        /* AI Modal */
-        .ai-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 3100; display: none; align-items: center; justify-content: center; }
-        .ai-modal-overlay.visible { display: flex; }
-        .ai-modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; min-width: 440px; max-width: 520px; box-shadow: var(--shadow-lg); }
-        .ai-modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
-        .ai-modal .ai-warning { padding: 10px 12px; background: rgba(255, 180, 0, 0.08); border: 1px solid rgba(255, 180, 0, 0.3); border-radius: 6px; font-size: 11px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
-        .ai-modal .ai-warning code { background: var(--bg-tertiary); padding: 1px 4px; border-radius: 3px; font-size: 10px; }
-        .ai-modal label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; margin-top: 12px; }
-        .ai-modal input, .ai-modal select { width: 100%; padding: 8px 10px; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 13px; font-family: inherit; }
-        .ai-modal .ai-modal-actions { display: flex; gap: 8px; margin-top: 18px; }
-        .ai-modal .ai-modal-actions button { flex: 1; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); }
-        .ai-modal .ai-modal-actions button.primary { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
-        .ai-modal .ai-modal-actions button:hover { border-color: var(--accent-primary); }
-        .ai-key-status { font-size: 11px; margin-top: 6px; color: var(--text-tertiary); }
-        .ai-key-status.ok { color: var(--success); }
-        .ai-key-status.err { color: #ff5252; }
-
-        /* Pending detection review bar */
-        #ai-review-bar { display: none; position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 2500; background: var(--bg-secondary); border: 1px solid var(--accent-primary); border-radius: 8px; padding: 10px 14px; box-shadow: var(--shadow-md); font-size: 13px; align-items: center; gap: 12px; }
-        #ai-review-bar.visible { display: flex; }
-        #ai-review-bar .ai-review-count { color: var(--text-primary); font-weight: 600; }
-        #ai-review-bar button { padding: 6px 12px; border-radius: 5px; font-size: 12px; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); }
-        #ai-review-bar button.primary { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
 
         /* Auto Layout */
         .layout-picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 4px; }
@@ -638,42 +590,6 @@
             <button class="btn btn-secondary" style="width:100%;" id="clear-redactions-btn">Clear All Redactions</button>
         </div>
 
-        <!-- AI Enhancements Section (v4) -->
-        <div class="sidebar-section">
-            <div class="ai-section-header">
-                <h3 class="section-title" style="margin-bottom:0;">AI Enhancements</h3>
-                <button class="ai-gear-btn" id="ai-settings-btn" title="API key settings">⚙ Key</button>
-            </div>
-            <div class="ai-btn-row">
-                <button class="ai-action-btn" id="ai-auto-redact-btn" disabled>
-                    <span class="ai-icon">🛡</span>
-                    <span>Smart Auto-Redact<span class="ai-sub">Detects emails, phones, cards, API keys, faces</span></span>
-                </button>
-                <button class="ai-action-btn" id="ai-auto-crop-btn" disabled>
-                    <span class="ai-icon">✂</span>
-                    <span>Auto-Crop &amp; Frame<span class="ai-sub">Trim margins, suggest device frame</span></span>
-                </button>
-                <button class="ai-action-btn" id="ai-alt-text-btn" disabled>
-                    <span class="ai-icon">💬</span>
-                    <span>Alt-Text &amp; Caption<span class="ai-sub">Local heuristic, or Claude vision with key</span></span>
-                </button>
-            </div>
-            <div id="ai-progress">
-                <div id="ai-progress-label">Working…</div>
-                <div id="ai-progress-bar"><div id="ai-progress-bar-fill"></div></div>
-            </div>
-            <div class="ai-alt-output" id="ai-alt-output">
-                <label class="control-label">Alt text</label>
-                <textarea id="ai-alt-text" readonly></textarea>
-                <label class="control-label">Caption</label>
-                <textarea id="ai-caption-text" readonly></textarea>
-                <div class="ai-copy-row">
-                    <button class="ai-copy-btn" data-copy="alt">Copy alt</button>
-                    <button class="ai-copy-btn" data-copy="caption">Copy caption</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Spotlight Section -->
         <div class="sidebar-section">
             <h3 class="section-title">Spotlight Effect</h3>
@@ -852,38 +768,6 @@
     </div>
 </div>
 
-<!-- AI Key Modal (v4) -->
-<div class="ai-modal-overlay" id="ai-key-modal">
-    <div class="ai-modal">
-        <h3>AI Settings <button class="ai-gear-btn" id="ai-key-close">✕</button></h3>
-        <div class="ai-warning">
-            Your key is stored only in this browser's <code>localStorage</code>. Browser calls use Anthropic's
-            <code>anthropic-dangerous-direct-browser-access</code> header — only paste a key you control.
-            Without a key, AI features fall back to local browser models.
-        </div>
-        <label for="ai-key-input">Anthropic API key</label>
-        <input type="password" id="ai-key-input" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
-        <label for="ai-model-select">Model</label>
-        <select id="ai-model-select">
-            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fast)</option>
-            <option value="claude-opus-4-7">Claude Opus 4.7 (high quality)</option>
-        </select>
-        <div class="ai-key-status" id="ai-key-status"></div>
-        <div class="ai-modal-actions">
-            <button id="ai-key-test">Test connection</button>
-            <button id="ai-key-clear">Clear key</button>
-            <button class="primary" id="ai-key-save">Save</button>
-        </div>
-    </div>
-</div>
-
-<!-- AI Review Bar (v4) -->
-<div id="ai-review-bar">
-    <span class="ai-review-count" id="ai-review-count">0 detections</span>
-    <button id="ai-review-reject">Reject all</button>
-    <button class="primary" id="ai-review-accept">Accept all</button>
-</div>
-
 <script>
         // ==================== STATE ====================
         const history = { past: [], future: [], maxSize: 50 };
@@ -924,9 +808,7 @@
             redactIntensity: 12,
             extraImages: [],
             selectedExtraImage: null,
-            autoLayout: { pattern: 'free', gap: 40, align: 'center' },
-            ai: { model: 'claude-haiku-4-5-20251001', pendingDetections: [], scanning: false },
-            lastImageRect: null
+            autoLayout: { pattern: 'free', gap: 40, align: 'center' }
         };
 
         // Registry of loaded extra Image objects (keyed by id, not serializable)
@@ -1323,9 +1205,6 @@
             ctx.drawImage(state.image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
             ctx.restore();
 
-            // Record image rect in canvas coords (used by AI features to map detections back)
-            state.lastImageRect = { x, y, w: imgWidth, h: imgHeight };
-
             // 4. Draw border
             if (state.showBorder) drawBorder(x, y, imgWidth, imgHeight);
 
@@ -1351,9 +1230,6 @@
 
             // 11. Draw watermark
             drawWatermark();
-
-            // 12. Draw AI pending detections (skipped on export)
-            if (!forExport) drawPendingDetections();
         }
 
         // ==================== BACKGROUND ====================
@@ -2438,7 +2314,6 @@
                     elements.uploadZone.style.display = 'none';
                     elements.canvasWrapper.style.display = 'block';
                     elements.annotationToolbar.style.display = 'flex';
-                    aiEnableButtonsIfImageLoaded();
                     saveStateToHistory();
                     render();
                     showNotification('Image loaded successfully!', 'success');
@@ -2468,7 +2343,6 @@
                     elements.canvasWrapper.style.display = 'block';
                     elements.annotationToolbar.style.display = 'flex';
                     elements.svgInputContainer.style.display = 'none';
-                    aiEnableButtonsIfImageLoaded();
                     saveStateToHistory();
                     render();
                     showNotification('SVG rendered successfully!', 'success');
@@ -3286,6 +3160,11 @@
             document.querySelector('.shadow-preset-btn[data-shadow="soft"]').classList.add('active');
         }
 
+        init();
+</script>
+</body>
+</html>
+
         // ==================== SETUP EVENT LISTENERS ====================
         function setupEventListeners() {
             // Upload
@@ -3784,449 +3663,6 @@
             ctx.fill();
         }
 
-        // ==================== AI ENHANCEMENTS (v4) ====================
-        const AI_KEY_STORAGE = 'snapshotpro_anthropic_key';
-        const AI_MODEL_STORAGE = 'snapshotpro_anthropic_model';
-
-        const AI_REGEX = {
-            email:  /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
-            phone:  /(\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
-            cc:     /\b(?:\d[ -]*?){13,19}\b/g,
-            apikey: /\b(sk-(?:ant-|proj-|live-|test-)?[A-Za-z0-9_-]{16,}|xox[baprs]-[A-Za-z0-9-]{10,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})\b/g
-        };
-
-        function luhnCheck(num) {
-            const digits = num.replace(/\D/g, '');
-            if (digits.length < 13 || digits.length > 19) return false;
-            let sum = 0, alt = false;
-            for (let i = digits.length - 1; i >= 0; i--) {
-                let n = parseInt(digits[i], 10);
-                if (alt) { n *= 2; if (n > 9) n -= 9; }
-                sum += n; alt = !alt;
-            }
-            return sum % 10 === 0;
-        }
-
-        function aiGetKey() { try { return localStorage.getItem(AI_KEY_STORAGE) || ''; } catch(e) { return ''; } }
-        function aiSetKey(k) { try { if (k) localStorage.setItem(AI_KEY_STORAGE, k); else localStorage.removeItem(AI_KEY_STORAGE); } catch(e) {} }
-        function aiGetModel() { try { return localStorage.getItem(AI_MODEL_STORAGE) || state.ai.model; } catch(e) { return state.ai.model; } }
-        function aiSetModel(m) { state.ai.model = m; try { localStorage.setItem(AI_MODEL_STORAGE, m); } catch(e) {} }
-
-        function aiHeaders() {
-            const key = aiGetKey();
-            if (!key) return null;
-            return {
-                'content-type': 'application/json',
-                'x-api-key': key,
-                'anthropic-version': '2023-06-01',
-                'anthropic-dangerous-direct-browser-access': 'true'
-            };
-        }
-
-        function aiSetProgress(label, pct) {
-            const wrap = document.getElementById('ai-progress');
-            if (!wrap) return;
-            if (label === null) { wrap.style.display = 'none'; return; }
-            wrap.style.display = 'block';
-            document.getElementById('ai-progress-label').textContent = label;
-            const p = Math.max(0, Math.min(100, Math.round((pct || 0) * 100)));
-            document.getElementById('ai-progress-bar-fill').style.width = p + '%';
-        }
-
-        function aiSourceToCanvasRect(sx, sy, sw, sh) {
-            const r = state.lastImageRect;
-            if (!r || !state.image) return null;
-            const scaleX = r.w / state.image.width;
-            const scaleY = r.h / state.image.height;
-            return { x: r.x + sx * scaleX, y: r.y + sy * scaleY, w: sw * scaleX, h: sh * scaleY };
-        }
-
-        function imageToOffscreenCanvas() {
-            const img = state.image;
-            const off = document.createElement('canvas');
-            off.width = img.width; off.height = img.height;
-            off.getContext('2d').drawImage(img, 0, 0);
-            return off;
-        }
-
-        async function aiRunAutoRedact() {
-            if (!state.image) { showNotification('Load an image first', 'error'); return; }
-            if (state.ai.scanning) return;
-            if (state.imageTransform.rotation !== 0 || state.imageTransform.flipH || state.imageTransform.flipV) {
-                showNotification('Reset rotation/flip before auto-redact', 'error'); return;
-            }
-            if (typeof Tesseract === 'undefined') { showNotification('OCR library not loaded', 'error'); return; }
-            state.ai.scanning = true;
-            state.ai.pendingDetections = [];
-            aiSetProgress('Running OCR…', 0);
-            try {
-                const off = imageToOffscreenCanvas();
-                const ocr = await Tesseract.recognize(off, 'eng', {
-                    logger: m => {
-                        if (m.status === 'recognizing text') aiSetProgress('OCR ' + Math.round(m.progress * 100) + '%', m.progress);
-                    }
-                });
-                const words = (ocr.data && ocr.data.words) || [];
-                const lineText = {};
-                words.forEach(w => {
-                    const lid = (w.line && w.line.id) || (w.baseline && w.baseline.y0) || 'l';
-                    lineText[lid] = lineText[lid] || [];
-                    lineText[lid].push(w);
-                });
-                const detections = [];
-                Object.values(lineText).forEach(lineWords => {
-                    const text = lineWords.map(w => w.text).join(' ');
-                    function findMatches(re, type) {
-                        const matches = [];
-                        let m;
-                        const r = new RegExp(re.source, re.flags);
-                        while ((m = r.exec(text)) !== null) matches.push({ start: m.index, end: m.index + m[0].length, value: m[0], type });
-                        return matches;
-                    }
-                    const all = [
-                        ...findMatches(AI_REGEX.email, 'email'),
-                        ...findMatches(AI_REGEX.phone, 'phone'),
-                        ...findMatches(AI_REGEX.apikey, 'apikey'),
-                        ...findMatches(AI_REGEX.cc, 'cc').filter(m => luhnCheck(m.value))
-                    ];
-                    if (all.length === 0) return;
-                    // Map char ranges back to word bboxes
-                    let cursor = 0;
-                    const wordRanges = lineWords.map(w => {
-                        const start = cursor; const end = cursor + w.text.length;
-                        cursor = end + 1; // space
-                        return { start, end, bbox: w.bbox };
-                    });
-                    all.forEach(match => {
-                        const hits = wordRanges.filter(wr => wr.end > match.start && wr.start < match.end);
-                        if (hits.length === 0) return;
-                        const x0 = Math.min(...hits.map(h => h.bbox.x0));
-                        const y0 = Math.min(...hits.map(h => h.bbox.y0));
-                        const x1 = Math.max(...hits.map(h => h.bbox.x1));
-                        const y1 = Math.max(...hits.map(h => h.bbox.y1));
-                        const pad = 2;
-                        detections.push({ kind: match.type, sx: x0 - pad, sy: y0 - pad, sw: (x1 - x0) + pad * 2, sh: (y1 - y0) + pad * 2, confidence: 0.9 });
-                    });
-                });
-
-                aiSetProgress('Detecting faces…', 0.7);
-                try {
-                    if (window.faceDetection && window.tf) {
-                        const detector = await window.faceDetection.createDetector(
-                            window.faceDetection.SupportedModels.MediaPipeFaceDetector,
-                            { runtime: 'tfjs', modelType: 'short' }
-                        );
-                        const faces = await detector.estimateFaces(state.image);
-                        (faces || []).forEach(f => {
-                            const b = f.box;
-                            if (!b) return;
-                            const pad = Math.max(b.width, b.height) * 0.1;
-                            detections.push({ kind: 'face', sx: b.xMin - pad, sy: b.yMin - pad, sw: b.width + pad * 2, sh: b.height + pad * 2, confidence: f.score || 0.8 });
-                        });
-                    }
-                } catch (e) {
-                    console.warn('face detection failed', e);
-                }
-
-                state.ai.pendingDetections = detections.map((d, i) => ({ id: 'ai-' + Date.now() + '-' + i, ...d }));
-                aiShowReviewBar();
-                render();
-                aiSetProgress(null);
-                if (detections.length === 0) showNotification('No sensitive data detected', 'success');
-                else showNotification(detections.length + ' detection(s) found — review and accept', 'success');
-            } catch (e) {
-                console.error(e);
-                showNotification('Auto-redact failed: ' + (e.message || e), 'error');
-                aiSetProgress(null);
-            } finally {
-                state.ai.scanning = false;
-            }
-        }
-
-        function aiShowReviewBar() {
-            const bar = document.getElementById('ai-review-bar');
-            const n = state.ai.pendingDetections.length;
-            if (n === 0) { bar.classList.remove('visible'); return; }
-            document.getElementById('ai-review-count').textContent =
-                n + ' detection' + (n === 1 ? '' : 's') + ' — ' +
-                state.ai.pendingDetections.map(d => d.kind).join(', ');
-            bar.classList.add('visible');
-        }
-
-        function drawPendingDetections() {
-            const dets = state.ai.pendingDetections || [];
-            if (dets.length === 0) return;
-            ctx.save();
-            ctx.strokeStyle = 'rgba(99, 102, 241, 0.9)';
-            ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([6, 4]);
-            ctx.font = 'bold 11px monospace';
-            dets.forEach(d => {
-                const rect = aiSourceToCanvasRect(d.sx, d.sy, d.sw, d.sh);
-                if (!rect) return;
-                ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-                ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-                ctx.setLineDash([]);
-                ctx.fillStyle = 'rgba(99, 102, 241, 0.95)';
-                const label = d.kind.toUpperCase();
-                const tw = ctx.measureText(label).width + 8;
-                ctx.fillRect(rect.x, Math.max(0, rect.y - 16), tw, 16);
-                ctx.fillStyle = '#fff';
-                ctx.fillText(label, rect.x + 4, Math.max(11, rect.y - 4));
-                ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
-                ctx.setLineDash([6, 4]);
-            });
-            ctx.restore();
-        }
-
-        function aiAcceptAllDetections() {
-            const dets = state.ai.pendingDetections || [];
-            if (dets.length === 0) return;
-            saveStateToHistory();
-            dets.forEach(d => {
-                const r = aiSourceToCanvasRect(d.sx, d.sy, d.sw, d.sh);
-                if (!r) return;
-                state.redactions.push({
-                    id: Date.now() + Math.random(),
-                    x: r.x, y: r.y, w: r.w, h: r.h,
-                    type: state.redactType || 'pixelate',
-                    intensity: state.redactIntensity || 12,
-                    source: 'ai',
-                    aiKind: d.kind,
-                    confidence: d.confidence
-                });
-            });
-            state.ai.pendingDetections = [];
-            document.getElementById('ai-review-bar').classList.remove('visible');
-            render();
-            showNotification('Redactions applied', 'success');
-        }
-
-        function aiRejectAllDetections() {
-            state.ai.pendingDetections = [];
-            document.getElementById('ai-review-bar').classList.remove('visible');
-            render();
-        }
-
-        function suggestFrameForAspect(ratio) {
-            const sel = document.getElementById('device-frame-type');
-            if (!sel) return;
-            let frame = '';
-            if (ratio > 1.6) frame = 'chrome';
-            else if (ratio >= 0.95 && ratio <= 1.05) frame = 'macos';
-            else if (ratio >= 0.4 && ratio <= 0.6) frame = 'iphone';
-            sel.value = frame;
-            sel.dispatchEvent(new Event('change', { bubbles: true }));
-            return frame;
-        }
-
-        function aiRunAutoCrop() {
-            if (!state.image) { showNotification('Load an image first', 'error'); return; }
-            aiSetProgress('Auto-cropping…', 0.3);
-            try {
-                const off = imageToOffscreenCanvas();
-                const ictx = off.getContext('2d');
-                const w = off.width, h = off.height;
-                const data = ictx.getImageData(0, 0, w, h).data;
-                // Sample border color (top-left)
-                const r0 = data[0], g0 = data[1], b0 = data[2], a0 = data[3];
-                const transparent = a0 < 16;
-                const tol = 12;
-                function isBorder(i) {
-                    const a = data[i + 3];
-                    if (transparent) return a < 16;
-                    return Math.abs(data[i] - r0) < tol && Math.abs(data[i+1] - g0) < tol && Math.abs(data[i+2] - b0) < tol;
-                }
-                let top = 0, bottom = h - 1, left = 0, right = w - 1;
-                outer: for (; top < h; top++) {
-                    for (let x = 0; x < w; x++) if (!isBorder((top * w + x) * 4)) break outer;
-                }
-                outer: for (; bottom > top; bottom--) {
-                    for (let x = 0; x < w; x++) if (!isBorder((bottom * w + x) * 4)) break outer;
-                }
-                outer: for (; left < w; left++) {
-                    for (let y = top; y <= bottom; y++) if (!isBorder((y * w + left) * 4)) break outer;
-                }
-                outer: for (; right > left; right--) {
-                    for (let y = top; y <= bottom; y++) if (!isBorder((y * w + right) * 4)) break outer;
-                }
-                const cw = right - left + 1, ch = bottom - top + 1;
-                if (cw <= 0 || ch <= 0 || (cw === w && ch === h)) {
-                    aiSetProgress(null);
-                    const ratio = w / h;
-                    const suggested = suggestFrameForAspect(ratio);
-                    showNotification(suggested ? `Frame: ${suggested}` : 'No crop needed', 'success');
-                    return;
-                }
-                saveStateToHistory();
-                const cropped = document.createElement('canvas');
-                cropped.width = cw; cropped.height = ch;
-                cropped.getContext('2d').drawImage(off, left, top, cw, ch, 0, 0, cw, ch);
-                const newImg = new Image();
-                newImg.onload = () => {
-                    state.image = newImg;
-                    const ratio = cw / ch;
-                    const suggested = suggestFrameForAspect(ratio);
-                    render();
-                    aiSetProgress(null);
-                    showNotification(`Cropped ${w}×${h} → ${cw}×${ch}` + (suggested ? `, frame: ${suggested}` : ''), 'success');
-                };
-                newImg.src = cropped.toDataURL('image/png');
-            } catch (e) {
-                console.error(e);
-                aiSetProgress(null);
-                showNotification('Auto-crop failed: ' + (e.message || e), 'error');
-            }
-        }
-
-        function canvasToThumbBase64(maxDim = 1024) {
-            const img = state.image;
-            const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-            const tw = Math.round(img.width * scale), th = Math.round(img.height * scale);
-            const c = document.createElement('canvas');
-            c.width = tw; c.height = th;
-            c.getContext('2d').drawImage(img, 0, 0, tw, th);
-            return c.toDataURL('image/jpeg', 0.85).split(',')[1];
-        }
-
-        async function aiRunAltText() {
-            if (!state.image) { showNotification('Load an image first', 'error'); return; }
-            const out = document.getElementById('ai-alt-output');
-            const altEl = document.getElementById('ai-alt-text');
-            const capEl = document.getElementById('ai-caption-text');
-            const headers = aiHeaders();
-            if (!headers) {
-                aiSetProgress('Local heuristic…', 0.5);
-                try {
-                    if (typeof Tesseract === 'undefined') throw new Error('OCR library not loaded');
-                    const off = imageToOffscreenCanvas();
-                    const ocr = await Tesseract.recognize(off, 'eng', {
-                        logger: m => { if (m.status === 'recognizing text') aiSetProgress('OCR ' + Math.round(m.progress * 100) + '%', m.progress); }
-                    });
-                    const text = (ocr.data && ocr.data.text || '').trim().replace(/\s+/g, ' ');
-                    const snippet = text.slice(0, 120);
-                    altEl.value = snippet ? `Screenshot containing the text: "${snippet}${text.length > 120 ? '…' : ''}"` : 'Screenshot (no readable text detected).';
-                    capEl.value = snippet ? snippet.split('.')[0].slice(0, 80) : 'Screenshot';
-                    out.style.display = 'block';
-                    aiSetProgress(null);
-                    showNotification('Local alt-text generated (no API key)', 'success');
-                } catch (e) {
-                    aiSetProgress(null);
-                    showNotification('Alt-text failed: ' + (e.message || e), 'error');
-                }
-                return;
-            }
-            aiSetProgress('Calling Claude…', 0.4);
-            try {
-                const b64 = canvasToThumbBase64(1024);
-                const body = {
-                    model: aiGetModel(),
-                    max_tokens: 400,
-                    messages: [{
-                        role: 'user',
-                        content: [
-                            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
-                            { type: 'text', text: 'Generate accessible alt text and a short shareable caption for this screenshot. Reply ONLY with strict JSON: {"alt": "...", "caption": "..."}. The alt should be 1-2 sentences describing the visible content for screen readers. The caption should be under 80 characters.' }
-                        ]
-                    }]
-                };
-                const resp = await fetch('https://api.anthropic.com/v1/messages', {
-                    method: 'POST', headers, body: JSON.stringify(body)
-                });
-                const json = await resp.json();
-                if (!resp.ok) throw new Error(json.error && json.error.message || resp.statusText);
-                const txt = (json.content && json.content[0] && json.content[0].text || '').trim();
-                let parsed = null;
-                try {
-                    const m = txt.match(/\{[\s\S]*\}/);
-                    parsed = m ? JSON.parse(m[0]) : null;
-                } catch (_) {}
-                altEl.value = (parsed && parsed.alt) || txt;
-                capEl.value = (parsed && parsed.caption) || '';
-                out.style.display = 'block';
-                aiSetProgress(null);
-                showNotification('Alt-text generated', 'success');
-            } catch (e) {
-                aiSetProgress(null);
-                showNotification('Claude call failed: ' + (e.message || e), 'error');
-            }
-        }
-
-        async function aiTestKey() {
-            const headers = aiHeaders();
-            const status = document.getElementById('ai-key-status');
-            if (!headers) { status.textContent = 'No key set.'; status.className = 'ai-key-status err'; return; }
-            status.textContent = 'Testing…'; status.className = 'ai-key-status';
-            try {
-                const resp = await fetch('https://api.anthropic.com/v1/messages', {
-                    method: 'POST', headers,
-                    body: JSON.stringify({ model: aiGetModel(), max_tokens: 8, messages: [{ role: 'user', content: 'ping' }] })
-                });
-                const json = await resp.json();
-                if (resp.ok) { status.textContent = 'Connected ✓'; status.className = 'ai-key-status ok'; }
-                else throw new Error(json.error && json.error.message || resp.statusText);
-            } catch (e) {
-                status.textContent = 'Failed: ' + (e.message || e);
-                status.className = 'ai-key-status err';
-            }
-        }
-
-        function aiOpenKeyModal() {
-            document.getElementById('ai-key-input').value = aiGetKey();
-            document.getElementById('ai-model-select').value = aiGetModel();
-            document.getElementById('ai-key-status').textContent = '';
-            document.getElementById('ai-key-status').className = 'ai-key-status';
-            document.getElementById('ai-key-modal').classList.add('visible');
-        }
-        function aiCloseKeyModal() { document.getElementById('ai-key-modal').classList.remove('visible'); }
-
-        function aiEnableButtonsIfImageLoaded() {
-            const has = !!state.image;
-            ['ai-auto-redact-btn', 'ai-auto-crop-btn', 'ai-alt-text-btn'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.disabled = !has;
-            });
-        }
-
-        function aiSetupListeners() {
-            document.getElementById('ai-settings-btn').addEventListener('click', aiOpenKeyModal);
-            document.getElementById('ai-key-close').addEventListener('click', aiCloseKeyModal);
-            document.getElementById('ai-key-save').addEventListener('click', () => {
-                const k = document.getElementById('ai-key-input').value.trim();
-                aiSetKey(k);
-                aiSetModel(document.getElementById('ai-model-select').value);
-                showNotification(k ? 'API key saved' : 'API key cleared', 'success');
-                aiCloseKeyModal();
-            });
-            document.getElementById('ai-key-clear').addEventListener('click', () => {
-                document.getElementById('ai-key-input').value = '';
-                aiSetKey('');
-                document.getElementById('ai-key-status').textContent = 'Cleared.';
-                document.getElementById('ai-key-status').className = 'ai-key-status';
-            });
-            document.getElementById('ai-key-test').addEventListener('click', aiTestKey);
-            document.getElementById('ai-auto-redact-btn').addEventListener('click', aiRunAutoRedact);
-            document.getElementById('ai-auto-crop-btn').addEventListener('click', aiRunAutoCrop);
-            document.getElementById('ai-alt-text-btn').addEventListener('click', aiRunAltText);
-            document.getElementById('ai-review-accept').addEventListener('click', aiAcceptAllDetections);
-            document.getElementById('ai-review-reject').addEventListener('click', aiRejectAllDetections);
-            document.querySelectorAll('.ai-copy-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const which = btn.dataset.copy;
-                    const text = document.getElementById(which === 'alt' ? 'ai-alt-text' : 'ai-caption-text').value;
-                    navigator.clipboard.writeText(text).then(
-                        () => showNotification('Copied ' + which, 'success'),
-                        () => showNotification('Copy failed', 'error')
-                    );
-                });
-            });
-            // Close modal on overlay click
-            document.getElementById('ai-key-modal').addEventListener('click', (e) => {
-                if (e.target.id === 'ai-key-modal') aiCloseKeyModal();
-            });
-        }
-
         // ==================== INIT ====================
         function init() {
             // Restore theme
@@ -4235,8 +3671,6 @@
             applyTheme(savedTheme);
 
             setupEventListeners();
-            aiSetupListeners();
-            state.ai.model = aiGetModel();
             updateAngleIndicator();
             updateGradientPreview();
             updateTemplateList();
